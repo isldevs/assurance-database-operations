@@ -11,37 +11,15 @@ import jakarta.validation.constraints.Pattern;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 public record DataSourceRegistrationProperties(
-
-        @NotBlank
-        @Pattern(regexp = "[A-Za-z][A-Za-z0-9_]{0,63}")
-        String projectCode,
-
-        @NotNull
-        Environment environment,
-
-        @NotBlank
-        @Pattern(regexp = "[A-Za-z][A-Za-z0-9_]{0,63}")
-        String dataSourceCode,
-
-        @NotNull
-        DatabaseEngine engine,
-
-        @NotBlank
-        String jdbcUrl,
-
-        @NotBlank
-        String username,
-
-        @NotBlank
-        String password,
-
-        @DefaultValue("true")
-        boolean enabled,
-
-        @Valid
-        @NotNull
-        @DefaultValue
-        PoolProperties pool) {
+        @NotBlank @Pattern(regexp = "[A-Za-z][A-Za-z0-9_]{0,63}") String projectCode,
+        @NotNull Environment environment,
+        @NotBlank @Pattern(regexp = "[A-Za-z][A-Za-z0-9_]{0,63}") String dataSourceCode,
+        @NotNull DatabaseEngine engine,
+        @NotBlank String jdbcUrl,
+        @NotBlank String username,
+        @NotBlank String password,
+        @DefaultValue("true") boolean enabled,
+        @Valid @NotNull @DefaultValue PoolProperties pool) {
 
     public DataSourceKey key() {
         return new DataSourceKey(projectCode, environment, dataSourceCode);
@@ -65,10 +43,14 @@ public record DataSourceRegistrationProperties(
         // Never include JDBC URLs, usernames, or passwords.
         return "DataSourceRegistrationProperties[projectCode="
                 + projectCode
-                + ", environment=" + environment
-                + ", dataSourceCode=" + dataSourceCode
-                + ", engine=" + engine
-                + ", enabled=" + enabled
+                + ", environment="
+                + environment
+                + ", dataSourceCode="
+                + dataSourceCode
+                + ", engine="
+                + engine
+                + ", enabled="
+                + enabled
                 + "]";
     }
 }

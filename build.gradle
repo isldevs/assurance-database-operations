@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spotless)
     id 'jacoco'
 }
 
@@ -164,10 +165,33 @@ dependencyLocking {
     lockMode = LockMode.STRICT
 }
 
+configurations.configureEach {
+    if (name.startsWith('spotless-')) {
+        resolutionStrategy.deactivateDependencyLocking()
+    }
+}
+
 tasks.named('processResources') {
     def applicationVersion = project.version.toString()
     inputs.property('applicationVersion', applicationVersion)
     filesMatching('application.yaml') {
         filter { line -> line.replace('@applicationVersion@', applicationVersion) }
+    }
+}
+
+spotless {
+    java {
+        target 'src/**/*.java'
+        googleJavaFormat(libs.versions.google.java.format.get()).aosp()
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+
+    format('misc') {
+        target '*.gradle', '*.md', '.gitignore'
+
+        trimTrailingWhitespace()
+        endWithNewline()
     }
 }

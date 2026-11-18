@@ -4,8 +4,8 @@ import com.company.assurance.dbops.datasource.engine.DatabaseEngine;
 import com.company.assurance.dbops.environment.Environment;
 
 /**
- * API responses never include JDBC URLs or passwords.
- * Credentials are referenced by {@code secretRef} for Vault / env resolution.
+ * API responses never include JDBC URLs or passwords. Credentials are referenced by {@code
+ * secretRef} for Vault / env resolution.
  */
 public record ProjectDataSourceResponse(
         String dataSourceId,
@@ -15,6 +15,4 @@ public record ProjectDataSourceResponse(
         String schemaName,
         String username,
         String secretRef,
-        boolean enabled
-) {
-}
+        boolean enabled) {}

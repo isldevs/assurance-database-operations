@@ -1,17 +1,5 @@
 package com.company.assurance.dbops.datasource.registry;
 
-import com.company.assurance.dbops.datasource.DataSourceKey;
-import com.company.assurance.dbops.datasource.config.DataSourceRegistrationProperties;
-import com.company.assurance.dbops.datasource.config.DatabaseOperationsProperties;
-import com.company.assurance.dbops.datasource.config.PoolProperties;
-import com.company.assurance.dbops.datasource.connection.HikariPoolFactory;
-import com.company.assurance.dbops.datasource.engine.DatabaseEngine;
-import com.company.assurance.dbops.environment.Environment;
-import com.zaxxer.hikari.HikariDataSource;
-import org.junit.jupiter.api.Test;
-
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -20,6 +8,17 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+
+import com.company.assurance.dbops.datasource.DataSourceKey;
+import com.company.assurance.dbops.datasource.config.DataSourceRegistrationProperties;
+import com.company.assurance.dbops.datasource.config.DatabaseOperationsProperties;
+import com.company.assurance.dbops.datasource.config.PoolProperties;
+import com.company.assurance.dbops.datasource.connection.HikariPoolFactory;
+import com.company.assurance.dbops.datasource.engine.DatabaseEngine;
+import com.company.assurance.dbops.environment.Environment;
+import com.zaxxer.hikari.HikariDataSource;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 public class DataSourceRegistryTests {
 
@@ -41,12 +40,9 @@ public class DataSourceRegistryTests {
             assertSame(stagePool, registry.resolve(stage.key()).dataSource());
             assertThrows(
                     UnknownDataSourceException.class,
-                    () -> registry.resolve(new DataSourceKey(
-                            "DEMO",
-                            Environment.STAGE2,
-                            "CORE_DB"
-                    ))
-            );
+                    () ->
+                            registry.resolve(
+                                    new DataSourceKey("DEMO", Environment.STAGE2, "CORE_DB")));
 
             // Resolving repeatedly reuses the same pool.
             registry.resolve(uat.key());
@@ -66,13 +62,11 @@ public class DataSourceRegistryTests {
         var stage = registration(Environment.STAGE, true);
 
         when(factory.create(uat)).thenReturn(firstPool);
-        when(factory.create(stage))
-                .thenThrow(new IllegalStateException("Test failure"));
+        when(factory.create(stage)).thenThrow(new IllegalStateException("Test failure"));
 
         assertThrows(
                 IllegalStateException.class,
-                () -> new DataSourceRegistry(properties(uat, stage), factory)
-        );
+                () -> new DataSourceRegistry(properties(uat, stage), factory));
 
         verify(firstPool).close();
     }
@@ -80,7 +74,8 @@ public class DataSourceRegistryTests {
     @Test
     void skipsDisabledRegistrations() {
         HikariPoolFactory factory = mock(HikariPoolFactory.class);
-        try (var registry = new DataSourceRegistry(properties(registration(Environment.UAT, false)), factory)) {
+        try (var registry =
+                new DataSourceRegistry(properties(registration(Environment.UAT, false)), factory)) {
             assertTrue(registry.keys().isEmpty());
             verifyNoInteractions(factory);
         }
@@ -94,27 +89,23 @@ public class DataSourceRegistryTests {
 
         when(factory.create(definition)).thenReturn(pool);
 
-        var registry = new DataSourceRegistry(
-                properties(definition),
-                factory
-        );
+        var registry = new DataSourceRegistry(properties(definition), factory);
 
         registry.close();
         registry.close();
 
         verify(pool, times(1)).close();
 
-        assertThrows(
-                IllegalStateException.class,
-                () -> registry.resolve(definition.key())
-        );
+        assertThrows(IllegalStateException.class, () -> registry.resolve(definition.key()));
     }
 
-    private static DatabaseOperationsProperties properties(DataSourceRegistrationProperties... registrations) {
+    private static DatabaseOperationsProperties properties(
+            DataSourceRegistrationProperties... registrations) {
         return new DatabaseOperationsProperties(24, List.of(registrations));
     }
 
-    private static DataSourceRegistrationProperties registration(Environment environment, boolean enabled) {
+    private static DataSourceRegistrationProperties registration(
+            Environment environment, boolean enabled) {
         return new DataSourceRegistrationProperties(
                 "DEMO",
                 environment,
@@ -124,8 +115,6 @@ public class DataSourceRegistryTests {
                 "test",
                 "test-fixture-not-a-real-secret",
                 enabled,
-                new PoolProperties(1, 0, 3000, 1000, 60000, 1800000, 0)
-        );
+                new PoolProperties(1, 0, 3000, 1000, 60000, 1800000, 0));
     }
-
 }

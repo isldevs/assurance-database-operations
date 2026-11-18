@@ -8,9 +8,8 @@ import org.springframework.test.context.ActiveProfiles;
 @ActiveProfiles("test")
 class ServerApplicationTests {
 
-	@Test
-	void contextLoads() {
-		// Verifies the application does not require a default datasource.
-	}
-
+    @Test
+    void contextLoads() {
+        // Verifies the application does not require a default datasource.
+    }
 }

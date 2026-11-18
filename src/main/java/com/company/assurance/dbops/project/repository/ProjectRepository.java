@@ -8,15 +8,14 @@ import com.company.assurance.dbops.project.entity.ProjectEnvironmentMapping;
 import com.company.assurance.dbops.project.entity.ProjectStatus;
 import com.company.assurance.dbops.project.exception.DuplicateProjectMappingException;
 import com.company.assurance.dbops.project.exception.ProjectAlreadyExistsException;
-import org.springframework.dao.DuplicateKeyException;
-import org.springframework.jdbc.core.simple.JdbcClient;
-import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public class ProjectRepository {
@@ -28,64 +27,75 @@ public class ProjectRepository {
     }
 
     public Optional<Project> findById(String projectId) {
-        return jdbcClient.sql("""
+        return jdbcClient
+                .sql(
+                        """
                         SELECT id, project_code, project_name, owner_name, status, created_at, updated_at
                         FROM db_project
                         WHERE id = :id
                         """)
                 .param("id", projectId)
-                .query((rs, rowNum) -> new Project(
-                        rs.getString("id"),
-                        rs.getString("project_code"),
-                        rs.getString("project_name"),
-                        rs.getString("owner_name"),
-                        ProjectStatus.valueOf(rs.getString("status")),
-                        rs.getTimestamp("created_at").toInstant(),
-                        rs.getTimestamp("updated_at").toInstant()
-                ))
+                .query(
+                        (rs, rowNum) ->
+                                new Project(
+                                        rs.getString("id"),
+                                        rs.getString("project_code"),
+                                        rs.getString("project_name"),
+                                        rs.getString("owner_name"),
+                                        ProjectStatus.valueOf(rs.getString("status")),
+                                        rs.getTimestamp("created_at").toInstant(),
+                                        rs.getTimestamp("updated_at").toInstant()))
                 .optional();
     }
 
     public Optional<Project> findByCode(String projectCode) {
-        return jdbcClient.sql("""
+        return jdbcClient
+                .sql(
+                        """
                         SELECT id, project_code, project_name, owner_name, status, created_at, updated_at
                         FROM db_project
                         WHERE project_code = :projectCode
                         """)
                 .param("projectCode", projectCode)
-                .query((rs, rowNum) -> new Project(
-                        rs.getString("id"),
-                        rs.getString("project_code"),
-                        rs.getString("project_name"),
-                        rs.getString("owner_name"),
-                        ProjectStatus.valueOf(rs.getString("status")),
-                        rs.getTimestamp("created_at").toInstant(),
-                        rs.getTimestamp("updated_at").toInstant()
-                ))
+                .query(
+                        (rs, rowNum) ->
+                                new Project(
+                                        rs.getString("id"),
+                                        rs.getString("project_code"),
+                                        rs.getString("project_name"),
+                                        rs.getString("owner_name"),
+                                        ProjectStatus.valueOf(rs.getString("status")),
+                                        rs.getTimestamp("created_at").toInstant(),
+                                        rs.getTimestamp("updated_at").toInstant()))
                 .optional();
     }
 
     public List<Project> findAll() {
-        return jdbcClient.sql("""
+        return jdbcClient
+                .sql(
+                        """
                         SELECT id, project_code, project_name, owner_name, status, created_at, updated_at
                         FROM db_project
                         ORDER BY project_code
                         """)
-                .query((rs, rowNum) -> new Project(
-                        rs.getString("id"),
-                        rs.getString("project_code"),
-                        rs.getString("project_name"),
-                        rs.getString("owner_name"),
-                        ProjectStatus.valueOf(rs.getString("status")),
-                        rs.getTimestamp("created_at").toInstant(),
-                        rs.getTimestamp("updated_at").toInstant()
-                ))
+                .query(
+                        (rs, rowNum) ->
+                                new Project(
+                                        rs.getString("id"),
+                                        rs.getString("project_code"),
+                                        rs.getString("project_name"),
+                                        rs.getString("owner_name"),
+                                        ProjectStatus.valueOf(rs.getString("status")),
+                                        rs.getTimestamp("created_at").toInstant(),
+                                        rs.getTimestamp("updated_at").toInstant()))
                 .list();
     }
 
     public void insert(Project project) {
         try {
-            jdbcClient.sql("""
+            jdbcClient
+                    .sql(
+                            """
                             INSERT INTO db_project
                                 (id, project_code, project_name, owner_name, status, created_at, updated_at)
                             VALUES
@@ -104,26 +114,32 @@ public class ProjectRepository {
         }
     }
 
-    public Optional<ProjectEnvironmentMapping> findEnvironment(String projectId, Environment environment) {
-        return jdbcClient.sql("""
+    public Optional<ProjectEnvironmentMapping> findEnvironment(
+            String projectId, Environment environment) {
+        return jdbcClient
+                .sql(
+                        """
                         SELECT id, project_id, environment_code, enabled, created_at
                         FROM db_project_environment
                         WHERE project_id = :projectId AND environment_code = :environment
                         """)
                 .param("projectId", projectId)
                 .param("environment", environment.name())
-                .query((rs, rowNum) -> new ProjectEnvironmentMapping(
-                        rs.getString("id"),
-                        rs.getString("project_id"),
-                        Environment.valueOf(rs.getString("environment_code")),
-                        rs.getBoolean("enabled"),
-                        rs.getTimestamp("created_at").toInstant()
-                ))
+                .query(
+                        (rs, rowNum) ->
+                                new ProjectEnvironmentMapping(
+                                        rs.getString("id"),
+                                        rs.getString("project_id"),
+                                        Environment.valueOf(rs.getString("environment_code")),
+                                        rs.getBoolean("enabled"),
+                                        rs.getTimestamp("created_at").toInstant()))
                 .optional();
     }
 
     public List<ProjectEnvironmentMapping> findEnvironments(String projectId) {
-        return jdbcClient.sql("""
+        return jdbcClient
+                .sql(
+                        """
                         SELECT pe.id, pe.project_id, pe.environment_code, pe.enabled, pe.created_at
                         FROM db_project_environment pe
                         INNER JOIN db_environment e ON e.code = pe.environment_code
@@ -131,19 +147,22 @@ public class ProjectRepository {
                         ORDER BY e.sort_order
                         """)
                 .param("projectId", projectId)
-                .query((rs, rowNum) -> new ProjectEnvironmentMapping(
-                        rs.getString("id"),
-                        rs.getString("project_id"),
-                        Environment.valueOf(rs.getString("environment_code")),
-                        rs.getBoolean("enabled"),
-                        rs.getTimestamp("created_at").toInstant()
-                ))
+                .query(
+                        (rs, rowNum) ->
+                                new ProjectEnvironmentMapping(
+                                        rs.getString("id"),
+                                        rs.getString("project_id"),
+                                        Environment.valueOf(rs.getString("environment_code")),
+                                        rs.getBoolean("enabled"),
+                                        rs.getTimestamp("created_at").toInstant()))
                 .list();
     }
 
     public void insertEnvironment(ProjectEnvironmentMapping mapping) {
         try {
-            jdbcClient.sql("""
+            jdbcClient
+                    .sql(
+                            """
                             INSERT INTO db_project_environment
                                 (id, project_id, environment_code, enabled, created_at)
                             VALUES
@@ -157,13 +176,14 @@ public class ProjectRepository {
                     .update();
         } catch (DuplicateKeyException ex) {
             throw new DuplicateProjectMappingException(
-                    "Environment already mapped: " + mapping.environment().name()
-            );
+                    "Environment already mapped: " + mapping.environment().name());
         }
     }
 
     public List<ProjectDataSourceMapping> findDataSources(String projectId) {
-        return jdbcClient.sql("""
+        return jdbcClient
+                .sql(
+                        """
                         SELECT ds.id,
                                pe.project_id,
                                ds.project_environment_id,
@@ -190,7 +210,9 @@ public class ProjectRepository {
 
     public void insertDataSource(ProjectDataSourceMapping mapping) {
         try {
-            jdbcClient.sql("""
+            jdbcClient
+                    .sql(
+                            """
                             INSERT INTO db_project_env_datasource
                                 (id, project_environment_id, data_source_code, engine, schema_name,
                                  jdbc_url, username, secret_ref, enabled, created_at, updated_at)
@@ -215,14 +237,15 @@ public class ProjectRepository {
                     "Data source already mapped for environment "
                             + mapping.environment().name()
                             + ": "
-                            + mapping.dataSourceCode()
-            );
+                            + mapping.dataSourceCode());
         }
     }
 
     @Transactional
     public void touchProject(String projectId, Instant updatedAt) {
-        jdbcClient.sql("""
+        jdbcClient
+                .sql(
+                        """
                         UPDATE db_project
                         SET updated_at = :updatedAt
                         WHERE id = :id
@@ -232,7 +255,8 @@ public class ProjectRepository {
                 .update();
     }
 
-    private static ProjectDataSourceMapping mapDataSource(java.sql.ResultSet rs) throws java.sql.SQLException {
+    private static ProjectDataSourceMapping mapDataSource(java.sql.ResultSet rs)
+            throws java.sql.SQLException {
         return new ProjectDataSourceMapping(
                 rs.getString("id"),
                 rs.getString("project_id"),
@@ -246,7 +270,6 @@ public class ProjectRepository {
                 rs.getString("secret_ref"),
                 rs.getBoolean("enabled"),
                 rs.getTimestamp("created_at").toInstant(),
-                rs.getTimestamp("updated_at").toInstant()
-        );
+                rs.getTimestamp("updated_at").toInstant());
     }
 }

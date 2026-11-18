@@ -44,3 +44,6 @@ application-secrets.yml
 application-secrets.yaml
 
 *.log
+
+# Generated Tomcat directories
+/catalina.base_IS_UNDEFINED/
