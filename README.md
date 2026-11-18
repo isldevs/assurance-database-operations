@@ -1,6 +1,6 @@
 # Assurance Database Operations
 
-## Local POC (project → environments → datasources)
+## Local (project → environments → data-sources)
 
 Local and production use the same approach: a real Postgres metadata database + Flyway
 migrations + `/api/v1/projects` APIs. Locally, Postgres runs in Docker Compose.

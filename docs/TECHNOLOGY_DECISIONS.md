@@ -18,7 +18,7 @@
 | Local infra | **Docker Compose (Postgres 17)** | Same engine family as production |
 | Security | **Spring Security** (+ OAuth2 profile later) | Portal SSO / Azure AD ready |
 | Observability | **Actuator + Micrometer + OpenTelemetry** | Health, metrics, tracing |
-| Tests | **JUnit 5 + MockMvc + H2 (test) / Docker Postgres (local)** | Fast CI + production-like local POC |
+| Tests | **JUnit 5 + MockMvc + H2 (test) / Docker Postgres (local)** | Fast CI + production-like local |
 
 ---
 
@@ -166,7 +166,7 @@ projectRepository.findById(id); // may trigger lazy loads / joins
 | Large ecosystem | Easy to leak fields (e.g. jdbcUrl) in JSON if not careful |
 
 **When JPA would be better:** large CRUD admin domains with many relations and little custom SQL.  
-**For this POC / Phase 1 metadata:** JdbcClient is the better default.
+**For this Phase 1 metadata:** JdbcClient is the better default.
 
 #### C) jOOQ
 
@@ -309,7 +309,7 @@ Creates:
 - Strong fit for application metadata.
 - Production can use managed Postgres with the **same Flyway scripts**.
 
-> Design doc mentions Oracle metadata in the broader portal. For this service POC we standardize on Postgres metadata for local/prod parity via Docker/managed Postgres. Target databases remain Oracle and/or PostgreSQL as registered.
+> Design doc mentions Oracle metadata in the broader portal. For this service we standardize on Postgres metadata for local/prod parity via Docker/managed Postgres. Target databases remain Oracle and/or PostgreSQL as registered.
 
 ### Target DBs
 - Drivers on classpath: Oracle JDBC + PostgreSQL.
@@ -318,7 +318,7 @@ Creates:
 
 ### Compared to alternatives for metadata
 
-| Option | Local DX | Prod maturity | Fit for POC? |
+| Option | Local DX | Prod maturity | Fit? |
 |--------|----------|---------------|--------------|
 | **PostgreSQL** | Excellent with Docker | Excellent | **Yes** |
 | Oracle XE in Docker | Heavier, licensing/friction | Matches some enterprise standards | Possible later |
@@ -357,11 +357,11 @@ docker compose up -d
 
 ### Current
 - `spring-boot-starter-security`
-- Open API access on non-`oauth2` profiles (POC / local / test)
+- Open API access on non-`oauth2` profiles (local / test)
 - `oauth2` profile reserved for JWT resource-server mode (Azure AD later)
 
 ### Why this staged approach
-- POC focus is hierarchy + APIs, not full IAM integration yet.
+- hierarchy + APIs, not full IAM integration yet.
 - Production path is already prepared (OAuth2 resource server dependency present).
 
 ### Compared to alternatives
@@ -404,7 +404,7 @@ docker compose up -d
 | Local demo | Docker Postgres | Same Flyway path as production |
 
 ### Why not Testcontainers for every test (yet)?
-- H2 keeps CI fast for the current POC.
+- H2 keeps CI fast.
 - Docker Compose covers the production-like path for demos.
 - Testcontainers is a good next step when the team wants CI = exact Postgres engine.
 
