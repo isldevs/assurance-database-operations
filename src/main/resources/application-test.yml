@@ -1,0 +1,39 @@
+spring:
+  config:
+    activate:
+      on-profile: test
+
+  datasource:
+    url: jdbc:h2:mem:dbops_metadata;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  flyway:
+    enabled: true
+
+management:
+  endpoints:
+    access:
+      default: none
+
+logging:
+  level:
+    root: WARN
+
+db-operations:
+  maximum-total-connections: 3
+  registrations:
+    - project-code: DEMO
+      environment: UAT
+      data-source-code: TEST_DB
+      engine: POSTGRESQL
+      jdbc-url: jdbc:postgresql://127.0.0.1:1/unused
+      username: test
+      password: test-fixture-not-a-real-secret
+      enabled: false
+      pool:
+        maximum-pool-size: 1
+
+db-target-policy:
+  approved-targets: []

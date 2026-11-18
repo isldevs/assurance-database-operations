@@ -1,0 +1,14 @@
+spring:
+  config:
+    activate:
+      on-profile: local
+
+  datasource:
+    url: ${METADATA_JDBC_URL:jdbc:postgresql://127.0.0.1:5433/dbops_metadata}
+    username: ${METADATA_DB_USERNAME:dbops_app}
+    password: ${METADATA_DB_PASSWORD:${DEMO_POSTGRES_APP_PASSWORD}}
+
+logging:
+  level:
+    root: INFO
+    com.company.assurance.dbops: DEBUG

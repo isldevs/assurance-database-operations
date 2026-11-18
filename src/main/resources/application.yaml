@@ -1,0 +1,71 @@
+spring:
+  application:
+    name: assurance-database-operations
+
+  threads:
+    virtual:
+      enabled: false
+
+  datasource:
+    # Metadata database for project / environment / datasource configuration.
+    # Local Docker and production both inject these values through environment variables.
+    url: ${METADATA_JDBC_URL:jdbc:postgresql://127.0.0.1:5433/dbops_metadata}
+    username: ${METADATA_DB_USERNAME:dbops_app}
+    password: ${METADATA_DB_PASSWORD:}
+    hikari:
+      pool-name: dbops-metadata
+      maximum-pool-size: 5
+      minimum-idle: 1
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  address: 127.0.0.1
+  port: 8080
+  shutdown: graceful
+  tomcat:
+    threads:
+      max: 20
+      min-spare: 2
+    max-connections: 50
+    accept-count: 20
+
+management:
+  server:
+    address: 127.0.0.1
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+application:
+  version: '${APP_VERSION:@applicationVersion@}'
+
+logging:
+  level:
+    com.zaxxer.hikari: INFO
+
+db-operations:
+  # Target operational pools stay separate from the metadata datasource above.
+  # Keep at least one disabled stub so validation remains satisfied before real targets are wired.
+  maximum-total-connections: 24
+  registrations:
+    - project-code: DEMO
+      environment: UAT
+      data-source-code: PLACEHOLDER_DB
+      engine: POSTGRESQL
+      jdbc-url: jdbc:postgresql://127.0.0.1:1/unused
+      username: placeholder
+      password: placeholder-not-a-real-secret
+      enabled: false
+      pool:
+        maximum-pool-size: 1
+
+db-target-policy:
+  approved-targets: []

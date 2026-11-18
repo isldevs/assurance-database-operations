@@ -1,0 +1,173 @@
+plugins {
+    id 'java'
+    alias(libs.plugins.spring.boot)
+    id 'jacoco'
+}
+
+group = 'com.company.assurance'
+version = providers.gradleProperty('releaseVersion')
+    .orElse(providers.environmentVariable('APP_VERSION'))
+    .getOrElse('0.0.1-SNAPSHOT')
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+dependencies {
+    implementation platform(libs.spring.boot.bom)
+    implementation platform(libs.opentelemetry.bom)
+    implementation platform(libs.jackson.bom)
+
+    // VA fixes: use patched versions from libs.versions.toml for libraries brought in by starters.
+    // implementation = application and tests; testImplementation = tests only.
+    // Constraints change versions without adding libraries. Remove when Boot supplies fixed versions.
+    constraints { DependencyConstraintHandler constraintHandler ->
+        constraintHandler.add('implementation', libs.logback.classic.get()) {
+            DependencyConstraint constraint -> constraint.because('Keep Logback aligned with the security-patched core module')
+        }
+        constraintHandler.add('implementation', libs.logback.core.get()) {
+            DependencyConstraint constraint -> constraint.because('Includes the fix for CVE-2026-104721')
+        }
+        constraintHandler.add('testImplementation', libs.json.smart.get()) {
+            DependencyConstraint constraint -> constraint.because('Fix CVE-2026-113602 in strict JSON validation')
+        }
+        constraintHandler.add('testImplementation', libs.accessors.smart.get()) {
+            DependencyConstraint constraint -> constraint.because('Align with json-smart and update its transitive ASM dependency')
+        }
+    }
+
+    implementation libs.spring.boot.webmvc
+    implementation libs.spring.boot.validation
+    implementation libs.spring.boot.jdbc
+    implementation libs.spring.boot.security
+    implementation libs.spring.boot.oauth2.resource.server
+    implementation libs.spring.boot.flyway
+    implementation libs.flyway.oracle
+    implementation libs.flyway.postgresql
+    implementation libs.spring.boot.actuator
+    implementation libs.micrometer.prometheus
+    implementation libs.micrometer.tracing.otel
+    implementation libs.opentelemetry.exporter.otlp
+
+    runtimeOnly libs.oracle.jdbc
+    runtimeOnly libs.postgresql
+
+    testImplementation(libs.spring.boot.test) {
+        // JSON assert uses the maintained org.json implementation instead.
+        exclude group: 'com.vaadin.external.google', module: 'android-json'
+    }
+    testImplementation libs.json
+    testImplementation libs.spring.security.test
+    // Let Boot's BOM align JUnit with the Spring Test version.
+    testRuntimeOnly libs.junit.platform.launcher
+    // In-memory metadata DB for unit/context tests. Local/prod use Docker or managed Postgres.
+    testRuntimeOnly libs.h2
+}
+
+sourceSets {
+    integrationTest {
+        // Real-engine tests have a separate source set and explicit task.
+        java.srcDir 'src/integrationTest/java'
+        resources.srcDir 'src/integrationTest/resources'
+
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    // Preserve parameter names for Spring request binding.
+    options.compilerArgs += ['-parameters', '-Xlint:deprecation']
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+
+    // Bound each test JVM's memory consumption.
+    maxHeapSize = '512m'
+    testLogging {
+        events 'failed', 'skipped'
+        exceptionFormat = 'full'
+    }
+}
+
+tasks.register('integrationTest', Test) {
+    description = 'Runs against isolated Oracle and PostgreSQL test databases.'
+    group = 'verification'
+
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+
+    useJUnitPlatform {
+        // Docker lifecycle tests have their own explicit task.
+        excludeTags 'docker'
+    }
+
+    shouldRunAfter test
+
+    // Database state is external to Gradle's inputs.
+    // Always execute the tests against the current infrastructure.
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+}
+
+tasks.register('dockerIntegrationTest', Test) {
+    description = 'Runs disposable-container lifecycle and restart tests.'
+    group = 'verification'
+
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+
+    useJUnitPlatform {
+        includeTags 'docker'
+    }
+
+    shouldRunAfter integrationTest
+
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+}
+
+jacoco {
+    toolVersion = libs.versions.jacoco.get()
+}
+
+test {
+    finalizedBy jacocoTestReport
+}
+
+tasks.named('jacocoTestReport') {
+    dependsOn tasks.named('test')
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+jacocoTestCoverageVerification {
+    dependsOn test
+    violationRules {
+        rule {
+            limit {
+                // Apply this gate after the meaningful test suite is added.
+                minimum = 0.85
+            }
+        }
+    }
+}
+
+dependencyLocking {
+    lockAllConfigurations()
+    lockMode = LockMode.STRICT
+}
+
+tasks.named('processResources') {
+    def applicationVersion = project.version.toString()
+    inputs.property('applicationVersion', applicationVersion)
+    filesMatching('application.yaml') {
+        filter { line -> line.replace('@applicationVersion@', applicationVersion) }
+    }
+}

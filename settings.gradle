@@ -1,0 +1,17 @@
+pluginManagement {
+    repositories {
+        // Resolve published build plugins through approved repositories.
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
+    repositories {
+        mavenCentral()
+    }
+}
+
+// Stable project name used in build output and generated artifacts.
+rootProject.name = 'assurance-database-operations'
