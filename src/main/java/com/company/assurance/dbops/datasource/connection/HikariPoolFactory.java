@@ -13,7 +13,8 @@ public final class HikariPoolFactory {
     private final TargetApprovalValidator targetApprovalValidator;
     private final MeterRegistry meterRegistry;
 
-    public HikariPoolFactory(TargetApprovalValidator targetApprovalValidator, MeterRegistry meterRegistry) {
+    public HikariPoolFactory(
+            TargetApprovalValidator targetApprovalValidator, MeterRegistry meterRegistry) {
         this.targetApprovalValidator = targetApprovalValidator;
         this.meterRegistry = meterRegistry;
     }
@@ -38,9 +39,7 @@ public final class HikariPoolFactory {
             dataSource.setValidationTimeout(pool.validationTimeoutMs());
             dataSource.setIdleTimeout(pool.idleTimeoutMs());
             dataSource.setMaxLifetime(pool.maximumLifetimeMs());
-            dataSource.setLeakDetectionThreshold(
-                    pool.leakDetectionThresholdMs()
-            );
+            dataSource.setLeakDetectionThreshold(pool.leakDetectionThresholdMs());
 
             // Do not fail the application because a target is currently offline.
             dataSource.setInitializationFailTimeout(-1);
@@ -62,19 +61,18 @@ public final class HikariPoolFactory {
             dataSource.close();
 
             // Do not propagate a driver/configuration message containing a URL.
-            throw new IllegalStateException(
-                    "Failed to configure a registered database pool"
-            );
+            throw new IllegalStateException("Failed to configure a registered database pool");
         }
     }
 
-    private static void configureDriverTimeouts(HikariDataSource dataSource, DataSourceRegistrationProperties registration) {
+    private static void configureDriverTimeouts(
+            HikariDataSource dataSource, DataSourceRegistrationProperties registration) {
         switch (registration.engine()) {
             case ORACLE -> {
                 dataSource.setDriverClassName("oracle.jdbc.OracleDriver");
                 // Oracle driver timeout values are milliseconds.
-                dataSource.addDataSourceProperty("oracle.net.CONNECT_TIMEOUT", "3000"); //3s
-                dataSource.addDataSourceProperty("oracle.jdbc.ReadTimeout", "5000"); //5s
+                dataSource.addDataSourceProperty("oracle.net.CONNECT_TIMEOUT", "3000"); // 3s
+                dataSource.addDataSourceProperty("oracle.jdbc.ReadTimeout", "5000"); // 5s
             }
 
             case POSTGRESQL -> {
@@ -89,6 +87,11 @@ public final class HikariPoolFactory {
 
     private static String poolName(DataSourceRegistrationProperties registration) {
         var key = registration.key();
-        return "dbops." + key.projectCode() + "." + key.environment().name() + "." + key.dataSourceCode();
+        return "dbops."
+                + key.projectCode()
+                + "."
+                + key.environment().name()
+                + "."
+                + key.dataSourceCode();
     }
 }

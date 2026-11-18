@@ -1,17 +1,13 @@
 package com.company.assurance.dbops.datasource;
 
 import com.company.assurance.dbops.environment.Environment;
-
 import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
- * We need to normalize the project code, environment, and data source code to ensure consistency and validation.
- *
- * {@code @example}
- *  -wing_core / UAT / wing_core
- *  -WING_CORE / UAT / WING_CORE
+ * We need to normalize the project code, environment, and data source code to ensure consistency
+ * and validation. {@code @example} -wing_core / UAT / wing_core -WING_CORE / UAT / WING_CORE
  *
  * @param projectCode
  * @param environment
@@ -22,10 +18,7 @@ public record DataSourceKey(String projectCode, Environment environment, String 
 
     public DataSourceKey {
         projectCode = normalize(projectCode, "projectCode");
-        environment = Objects.requireNonNull(
-                environment,
-                "environment is required"
-        );
+        Objects.requireNonNull(environment, "environment is required");
         dataSourceCode = normalize(dataSourceCode, "dataSourceCode");
     }
 
@@ -40,8 +33,7 @@ public record DataSourceKey(String projectCode, Environment environment, String 
             throw new IllegalArgumentException(
                     fieldName
                             + " must start with a letter and contain only "
-                            + "letters, digits, or underscores, up to 64 characters"
-            );
+                            + "letters, digits, or underscores, up to 64 characters");
         }
 
         return normalized;

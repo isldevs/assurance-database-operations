@@ -1,7 +1,6 @@
 package com.company.assurance.dbops.project.response;
 
 import com.company.assurance.dbops.project.entity.ProjectStatus;
-
 import java.time.Instant;
 import java.util.List;
 
@@ -13,6 +12,4 @@ public record ProjectDetailResponse(
         ProjectStatus status,
         List<ProjectEnvironmentResponse> environments,
         Instant createdAt,
-        Instant updatedAt
-) {
-}
+        Instant updatedAt) {}

@@ -9,8 +9,8 @@ import org.springframework.context.annotation.Configuration;
 public class DataSourceRegistryConfiguration {
 
     @Bean(destroyMethod = "close")
-    DataSourceRegistry dataSourceRegistry(DatabaseOperationsProperties properties, HikariPoolFactory poolFactory) {
+    DataSourceRegistry dataSourceRegistry(
+            DatabaseOperationsProperties properties, HikariPoolFactory poolFactory) {
         return new DataSourceRegistry(properties, poolFactory);
     }
-
 }

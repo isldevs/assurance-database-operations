@@ -2,7 +2,6 @@ package com.company.assurance.dbops.project.entity;
 
 import com.company.assurance.dbops.datasource.engine.DatabaseEngine;
 import com.company.assurance.dbops.environment.Environment;
-
 import java.time.Instant;
 
 public record ProjectDataSourceMapping(
@@ -18,6 +17,4 @@ public record ProjectDataSourceMapping(
         String secretRef,
         boolean enabled,
         Instant createdAt,
-        Instant updatedAt
-) {
-}
+        Instant updatedAt) {}

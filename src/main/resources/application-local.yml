@@ -4,11 +4,41 @@ spring:
       on-profile: local
 
   datasource:
-    url: ${METADATA_JDBC_URL:jdbc:postgresql://127.0.0.1:5433/dbops_metadata}
-    username: ${METADATA_DB_USERNAME:dbops_app}
-    password: ${METADATA_DB_PASSWORD:${DEMO_POSTGRES_APP_PASSWORD}}
+    # Metadata database for project / environment / datasource configuration.
+    # Local Docker and production both inject these values through environment variables.
+    url: ${POSTGRES_JDBC_URL:}
+    username: ${POSTGRES_USERNAME:}
+    password: ${POSTGRES_PASSWORD:}
+
+db-operations:
+  maximum-total-connections: 10
+
+  registrations:
+    # Oracle operational datasource
+    - project-code: ORACLE
+      data-source-code: ORACLE
+      engine: ORACLE
+      environment: UAT
+      jdbc-url: ${ORACLE_JDBC_URL:}
+      username: ${ORACLE_USERNAME:}
+      password: ${ORACLE_PASSWORD:}
+      enabled: true
+
+# Deny unapproved target destinations by default.
+db-target-policy:
+  approved-targets:
+    - project-code: ORACLE
+      environment: UAT
+      data-source-code: ORACLE
+      engine: ORACLE
+      jdbc-url: ${ORACLE_JDBC_URL:}
+      non-production-confirmed: true
 
 logging:
   level:
     root: INFO
-    com.company.assurance.dbops: DEBUG
+    com.company.assurance: INFO
+    com.zaxxer.hikari: INFO
+    org.flywaydb: INFO
+    org.hibernate.SQL: WARN
+    org.hibernate.orm.jdbc.bind: OFF

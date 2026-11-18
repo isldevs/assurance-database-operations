@@ -13,14 +13,15 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     /**
-     * Testing Only: API open for hierarchy demos.
-     * Production activates the {@code oauth2} profile with Azure AD JWT validation.
+     * Testing Only: API open for hierarchy demos. Production activates the {@code oauth2} profile
+     * with Azure AD JWT validation.
      */
     @Bean
     @Profile("!oauth2")
     SecurityFilterChain securityFilterChain(HttpSecurity http) {
         http.csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(
+                        session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
         return http.build();
     }
@@ -29,10 +30,14 @@ public class SecurityConfig {
     @Profile("oauth2")
     SecurityFilterChain oauth2SecurityFilterChain(HttpSecurity http) {
         http.csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                        .anyRequest().authenticated())
+                .sessionManagement(
+                        session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(
+                        auth ->
+                                auth.requestMatchers("/actuator/health", "/actuator/info")
+                                        .permitAll()
+                                        .anyRequest()
+                                        .authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
         return http.build();
     }

@@ -1,25 +1,14 @@
-spring:
-  application:
-    name: assurance-database-operations
+logging:
+  level:
+    root: INFO
+    com.company.assurance.dbops: INFO
+    com.zaxxer.hikari: INFO
+    org.flywaydb: INFO
+    org.hibernate.SQL: WARN
+    org.hibernate.orm.jdbc.bind: OFF
 
-  threads:
-    virtual:
-      enabled: false
-
-  datasource:
-    # Metadata database for project / environment / datasource configuration.
-    # Local Docker and production both inject these values through environment variables.
-    url: ${METADATA_JDBC_URL:jdbc:postgresql://127.0.0.1:5433/dbops_metadata}
-    username: ${METADATA_DB_USERNAME:dbops_app}
-    password: ${METADATA_DB_PASSWORD:}
-    hikari:
-      pool-name: dbops-metadata
-      maximum-pool-size: 5
-      minimum-idle: 1
-
-  flyway:
-    enabled: true
-    locations: classpath:db/migration
+application:
+  version: '${APP_VERSION:@applicationVersion@}'
 
 server:
   address: 127.0.0.1
@@ -44,28 +33,46 @@ management:
     health:
       show-details: never
 
-application:
-  version: '${APP_VERSION:@applicationVersion@}'
+spring:
+  application:
+    name: assurance-database-operations
 
-logging:
-  level:
-    com.zaxxer.hikari: INFO
-
-db-operations:
-  # Target operational pools stay separate from the metadata datasource above.
-  # Keep at least one disabled stub so validation remains satisfied before real targets are wired.
-  maximum-total-connections: 24
-  registrations:
-    - project-code: DEMO
-      environment: UAT
-      data-source-code: PLACEHOLDER_DB
-      engine: POSTGRESQL
-      jdbc-url: jdbc:postgresql://127.0.0.1:1/unused
-      username: placeholder
-      password: placeholder-not-a-real-secret
+  threads:
+    virtual:
       enabled: false
+
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: dbops
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 10000
+      validation-timeout: 3000
+      idle-timeout: 300000
+      max-lifetime: 1800000
+      initialization-fail-timeout: 30000
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    clean-disabled: true
+    baseline-on-migrate: false
+
+# Operational target datasource
+# Independent of the primary metadata datasource.
+db-operations:
+  registrations:
+    - project-code: ORACLE
       pool:
         maximum-pool-size: 1
-
-db-target-policy:
-  approved-targets: []
+        minimum-idle: 0
+        connection-timeout-ms: 3000
+        validation-timeout-ms: 1000
+        idle-timeout-ms: 60000
+        maximum-lifetime-ms: 1800000
+        leak-detection-threshold-ms: 0

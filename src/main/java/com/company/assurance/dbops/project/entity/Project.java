@@ -19,6 +19,4 @@ public record Project(
         String ownerName,
         ProjectStatus status,
         Instant createdAt,
-        Instant updatedAt
-) {
-}
+        Instant updatedAt) {}

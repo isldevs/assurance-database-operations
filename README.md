@@ -12,8 +12,8 @@ migrations + `/api/v1/projects` APIs. Locally, Postgres runs in Docker Compose.
    ```
 2. Run the API with the local profile (password must match `.env`):
    ```powershell
-   $env:DEMO_POSTGRES_APP_PASSWORD = "change-me-app"
-   $env:METADATA_DB_PASSWORD = "change-me-app"
+   $env:POSTGRES_APP_PASSWORD = "change-me-app"
+   $env:ORACLE_DB_PASSWORD = "change-me-app"
    .\gradlew.bat bootRun --args="--spring.profiles.active=local"
    ```
 3. Demo the hierarchy:

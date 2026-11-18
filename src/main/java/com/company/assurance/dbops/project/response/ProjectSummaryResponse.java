@@ -1,7 +1,6 @@
 package com.company.assurance.dbops.project.response;
 
 import com.company.assurance.dbops.project.entity.ProjectStatus;
-
 import java.time.Instant;
 
 public record ProjectSummaryResponse(
@@ -11,6 +10,4 @@ public record ProjectSummaryResponse(
         String ownerName,
         ProjectStatus status,
         Instant createdAt,
-        Instant updatedAt
-) {
-}
+        Instant updatedAt) {}
