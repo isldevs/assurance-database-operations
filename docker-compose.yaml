@@ -10,7 +10,7 @@ services:
     environment:
       POSTGRES_DB: dbops
       POSTGRES_USER: dbops
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      METADATA_DB_PASSWORD: ${METADATA_DB_PASSWORD:?Set METADATA_DB_PASSWORD in .env}
 
     ports:
       # Loopback only — mirrors private networking in production.

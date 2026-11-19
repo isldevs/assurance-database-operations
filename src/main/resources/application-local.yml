@@ -6,9 +6,9 @@ spring:
   datasource:
     # Metadata database for project / environment / datasource configuration.
     # Local Docker and production both inject these values through environment variables.
-    url: ${POSTGRES_JDBC_URL:}
-    username: ${POSTGRES_USERNAME:}
-    password: ${POSTGRES_PASSWORD:}
+    url: ${METADATA_JDBC_URL:}
+    username: ${METADATA_DB_USERNAME:}
+    password: ${METADATA_DB_PASSWORD:}
 
 db-operations:
   maximum-total-connections: 10
