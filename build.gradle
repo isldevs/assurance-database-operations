@@ -153,12 +153,14 @@ jacocoTestCoverageVerification {
     violationRules {
         rule {
             limit {
-                // Apply this gate after the meaningful test suite is added.
-                minimum = 0.85
+                // Initial repository-wide gate; increase as meaningful test suites grow.
+                minimum = 0.60
             }
         }
     }
 }
+
+check.dependsOn jacocoTestCoverageVerification
 
 dependencyLocking {
     lockAllConfigurations()

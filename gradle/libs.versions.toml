@@ -8,7 +8,7 @@ json-smart = "2.6.1" # CVE-2026-113602; also updates ASM transitively.
 json = "20260814"
 jacoco = "0.8.14"
 spotless = "7.2.1"
-google-java-format = "1.30.0"
+google-java-format = "1.24.0"
 
 [libraries]
 spring-boot-bom = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "spring-boot" }
@@ -37,7 +37,6 @@ accessors-smart = { module = "net.minidev:accessors-smart", version.ref = "json-
 json = { module = "org.json:json", version.ref = "json" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 h2 = { module = "com.h2database:h2" }
-google-java-format = { module = "com.google.googlejavaformat:google-java-format", version.ref = "google-java-format" }
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }

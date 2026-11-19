@@ -12,17 +12,30 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration(proxyBeanMethods = false)
 public class SecurityConfig {
 
-    /**
-     * Testing Only: API open for hierarchy demos. Production activates the {@code oauth2} profile
-     * with Azure AD JWT validation.
-     */
+    /** Explicit local/demo access. This is intentionally unavailable in every other profile. */
     @Bean
-    @Profile("!oauth2")
-    SecurityFilterChain securityFilterChain(HttpSecurity http) {
+    @Profile({"local", "test"})
+    SecurityFilterChain localSecurityFilterChain(HttpSecurity http) {
         http.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(
                         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+        return http.build();
+    }
+
+    @Bean
+    @Profile("!oauth2 & !local & !test")
+    SecurityFilterChain securedDefaultFilterChain(HttpSecurity http) {
+        http.csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(
+                        session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(
+                        auth ->
+                                auth.requestMatchers("/actuator/health", "/actuator/info")
+                                        .permitAll()
+                                        .anyRequest()
+                                        .authenticated())
+                .httpBasic(Customizer.withDefaults());
         return http.build();
     }
 

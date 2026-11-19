@@ -12,7 +12,11 @@ migrations + `/api/v1/projects` APIs. Locally, Postgres runs in Docker Compose.
    ```
 2. Run the API with the local profile (password must match `.env`):
    ```powershell
-   $env:POSTGRES_APP_PASSWORD = "change-me-app"
+   $env:METADATA_JDBC_URL = "jdbc:postgresql://127.0.0.1:5433/dbops"
+   $env:METADATA_DB_USERNAME = "dbops"
+   $env:METADATA_DB_PASSWORD = "change-me-app"
+   $env:ORACLE_JDBC_URL = "jdbc:oracle:thin:@//127.0.0.1:1523/dbops"
+   $env:ORACLE_DB_USERNAME = "dbops"
    $env:ORACLE_DB_PASSWORD = "change-me-app"
    .\gradlew.bat bootRun --args="--spring.profiles.active=local"
    ```

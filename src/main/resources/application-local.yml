@@ -6,9 +6,9 @@ spring:
   datasource:
     # Metadata database for project / environment / datasource configuration.
     # Local Docker and production both inject these values through environment variables.
-    url: ${METADATA_JDBC_URL:}
-    username: ${METADATA_DB_USERNAME:}
-    password: ${METADATA_DB_PASSWORD:}
+    url: ${METADATA_JDBC_URL}
+    username: ${METADATA_DB_USERNAME}
+    password: ${METADATA_DB_PASSWORD}
 
 db-operations:
   maximum-total-connections: 10
@@ -19,9 +19,9 @@ db-operations:
       data-source-code: ORACLE
       engine: ORACLE
       environment: UAT
-      jdbc-url: ${ORACLE_JDBC_URL:}
-      username: ${ORACLE_USERNAME:}
-      password: ${ORACLE_PASSWORD:}
+      jdbc-url: ${ORACLE_JDBC_URL}
+      username: ${ORACLE_DB_USERNAME}
+      password: ${ORACLE_DB_PASSWORD}
       enabled: true
 
 # Deny unapproved target destinations by default.
@@ -31,7 +31,7 @@ db-target-policy:
       environment: UAT
       data-source-code: ORACLE
       engine: ORACLE
-      jdbc-url: ${ORACLE_JDBC_URL:}
+      jdbc-url: ${ORACLE_JDBC_URL}
       non-production-confirmed: true
 
 logging:
