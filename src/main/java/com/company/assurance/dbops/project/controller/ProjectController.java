@@ -2,13 +2,14 @@ package com.company.assurance.dbops.project.controller;
 
 import com.company.assurance.dbops.common.api.ApiResponse;
 import com.company.assurance.dbops.common.api.CorrelationIdFilter;
-import com.company.assurance.dbops.project.request.CreateProjectRequest;
-import com.company.assurance.dbops.project.request.MapDataSourceRequest;
-import com.company.assurance.dbops.project.request.MapEnvironmentRequest;
-import com.company.assurance.dbops.project.response.ProjectDataSourceResponse;
-import com.company.assurance.dbops.project.response.ProjectDetailResponse;
-import com.company.assurance.dbops.project.response.ProjectEnvironmentResponse;
-import com.company.assurance.dbops.project.response.ProjectSummaryResponse;
+import com.company.assurance.dbops.project.data.request.CreateProjectRequest;
+import com.company.assurance.dbops.project.data.request.MapDataSourceRequest;
+import com.company.assurance.dbops.project.data.request.MapEnvironmentRequest;
+import com.company.assurance.dbops.project.data.response.ProjectDataSourceConnectionResponse;
+import com.company.assurance.dbops.project.data.response.ProjectDataSourceResponse;
+import com.company.assurance.dbops.project.data.response.ProjectDetailResponse;
+import com.company.assurance.dbops.project.data.response.ProjectEnvironmentResponse;
+import com.company.assurance.dbops.project.data.response.ProjectSummaryResponse;
 import com.company.assurance.dbops.project.service.ProjectService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -86,6 +87,16 @@ public class ProjectController {
                         .flatMap(environment -> environment.dataSources().stream())
                         .toList();
         return ApiResponse.ok(dataSources, correlationId(httpRequest));
+    }
+
+    @PostMapping("/{projectId}/data-sources/{projectDataSourceId}/test-connection")
+    ApiResponse<ProjectDataSourceConnectionResponse> testDataSourceConnection(
+            @PathVariable String projectId,
+            @PathVariable String projectDataSourceId,
+            HttpServletRequest httpRequest) {
+        return ApiResponse.ok(
+                projectService.testDataSourceConnection(projectId, projectDataSourceId),
+                correlationId(httpRequest));
     }
 
     private static String correlationId(HttpServletRequest request) {

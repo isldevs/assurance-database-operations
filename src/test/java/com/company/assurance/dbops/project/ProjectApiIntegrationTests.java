@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -26,6 +27,44 @@ class ProjectApiIntegrationTests {
     @Autowired private WebApplicationContext webApplicationContext;
 
     @Autowired private ObjectMapper objectMapper;
+
+    @Autowired private JdbcTemplate jdbcTemplate;
+
+    @Test
+    void migrationMovesMappedDataSourceUsernameOutOfMetadataSchema() {
+        Integer usernameColumnCount =
+                jdbcTemplate.queryForObject(
+                        """
+                        SELECT COUNT(*)
+                        FROM INFORMATION_SCHEMA.COLUMNS
+                        WHERE TABLE_SCHEMA = 'PUBLIC'
+                          AND TABLE_NAME = 'DB_PROJECT_ENV_DATASOURCE'
+                          AND COLUMN_NAME = 'USERNAME'
+                        """,
+                        Integer.class);
+
+        assertEquals(0, usernameColumnCount);
+    }
+
+    @Test
+    void createsProjectWithConfiguredTestActorAndDefaultPromotionMode() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+
+        mockMvc.perform(
+                        post("/api/v1/projects")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                {
+                                  "projectCode": "ACTOR_TEST",
+                                  "projectName": "Actor Test Project",
+                                  "ownerName": "Test Team"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.promotionMode").value("SEQUENTIAL"))
+                .andExpect(jsonPath("$.data.createdBy").value("test-user"));
+    }
 
     @Test
     void supportsOneProjectWithMultipleEnvironmentsAndDataSources() throws Exception {
@@ -46,6 +85,8 @@ class ProjectApiIntegrationTests {
                         .andExpect(status().isCreated())
                         .andExpect(jsonPath("$.success").value(true))
                         .andExpect(jsonPath("$.data.projectCode").value("WING_CORE"))
+                        .andExpect(jsonPath("$.data.promotionMode").value("SEQUENTIAL"))
+                        .andExpect(jsonPath("$.data.createdBy").value("test-user"))
                         .andReturn();
 
         String projectId =
@@ -74,18 +115,28 @@ class ProjectApiIntegrationTests {
                 .andExpect(status().isCreated());
 
         mockMvc.perform(
-                        post("/api/v1/projects/{projectId}/data-sources", projectId)
+                        post("/api/v1/data-sources")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(
                                         """
                                 {
-                                  "environment": "UAT",
-                                  "dataSourceCode": "CORE_DB",
+                                  "dataSourceCode": "CORE_DB_WING",
+                                  "dataSourceName": "Core Database",
                                   "engine": "POSTGRESQL",
-                                  "schemaName": "core",
-                                  "jdbcUrl": "jdbc:postgresql://127.0.0.1:5433/uat_core",
-                                  "username": "dbops_app",
-                                  "secretRef": "UAT_CORE_DB_PASSWORD"
+                                  "description": "Core banking database"
+                                }
+                                """))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(
+                        post("/api/v1/data-sources")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                {
+                                  "dataSourceCode": "PERSONA_DB_WING",
+                                  "dataSourceName": "Persona Database",
+                                  "engine": "POSTGRESQL"
                                 }
                                 """))
                 .andExpect(status().isCreated());
@@ -97,12 +148,27 @@ class ProjectApiIntegrationTests {
                                         """
                                 {
                                   "environment": "UAT",
-                                  "dataSourceCode": "PERSONA_DB",
-                                  "engine": "POSTGRESQL",
+                                  "dataSourceCode": "CORE_DB_WING",
+                                  "schemaName": "core",
+                                  "jdbcUrl": "jdbc:postgresql://127.0.0.1:5433/uat_core",
+                                  "secretRef": "projects/WING_CORE/environments/UAT/data-sources/CORE_DB_WING"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.username").doesNotExist())
+                .andExpect(jsonPath("$.data.jdbcUrl").doesNotExist());
+
+        mockMvc.perform(
+                        post("/api/v1/projects/{projectId}/data-sources", projectId)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                {
+                                  "environment": "UAT",
+                                  "dataSourceCode": "PERSONA_DB_WING",
                                   "schemaName": "persona",
                                   "jdbcUrl": "jdbc:postgresql://127.0.0.1:5433/uat_persona",
-                                  "username": "dbops_app",
-                                  "secretRef": "UAT_PERSONA_DB_PASSWORD"
+                                  "secretRef": "projects/WING_CORE/environments/UAT/data-sources/PERSONA_DB_WING"
                                 }
                                 """))
                 .andExpect(status().isCreated());
@@ -114,12 +180,10 @@ class ProjectApiIntegrationTests {
                                         """
                                 {
                                   "environment": "STAGE",
-                                  "dataSourceCode": "CORE_DB",
-                                  "engine": "POSTGRESQL",
+                                  "dataSourceCode": "CORE_DB_WING",
                                   "schemaName": "core",
                                   "jdbcUrl": "jdbc:postgresql://127.0.0.1:5433/stage_core",
-                                  "username": "dbops_app",
-                                  "secretRef": "STAGE_CORE_DB_PASSWORD"
+                                  "secretRef": "projects/WING_CORE/environments/STAGE/data-sources/CORE_DB_WING"
                                 }
                                 """))
                 .andExpect(status().isCreated());

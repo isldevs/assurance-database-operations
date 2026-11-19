@@ -1,4 +1,4 @@
-package com.company.assurance.dbops.project.request;
+package com.company.assurance.dbops.project.data.request;
 
 import com.company.assurance.dbops.environment.Environment;
 import jakarta.validation.constraints.NotNull;

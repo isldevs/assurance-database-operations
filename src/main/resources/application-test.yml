@@ -4,13 +4,20 @@ spring:
       on-profile: test
 
   datasource:
-    url: jdbc:h2:mem:dbops_metadata;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    url: jdbc:h2:mem:dbops_metadata;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE;INIT=CREATE DOMAIN IF NOT EXISTS TIMESTAMPTZ AS TIMESTAMP WITH TIME ZONE
     username: sa
     password:
     driver-class-name: org.h2.Driver
 
   flyway:
     enabled: true
+
+anonymous-user: test-user
+
+vault:
+  address: http://127.0.0.1:8200
+  token: test-vault-token
+  secret-path: projects/{PROJECT_CODE}/environments/{ENVIRONMENT}/data-sources/{DATA_SOURCE_CODE}
 
 management:
   endpoints:

@@ -1,4 +1,4 @@
-package com.company.assurance.dbops.project.response;
+package com.company.assurance.dbops.project.data.response;
 
 import com.company.assurance.dbops.datasource.engine.DatabaseEngine;
 import com.company.assurance.dbops.environment.Environment;
@@ -8,11 +8,11 @@ import com.company.assurance.dbops.environment.Environment;
  * secretRef} for Vault / env resolution.
  */
 public record ProjectDataSourceResponse(
+        String projectDataSourceId,
         String dataSourceId,
         Environment environment,
         String dataSourceCode,
         DatabaseEngine engine,
         String schemaName,
-        String username,
         String secretRef,
         boolean enabled) {}

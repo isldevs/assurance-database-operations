@@ -18,5 +18,7 @@ public record Project(
         String projectName,
         String ownerName,
         ProjectStatus status,
+        PromotionMode promotionMode,
+        String createdBy,
         Instant createdAt,
         Instant updatedAt) {}

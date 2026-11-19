@@ -10,6 +10,12 @@ spring:
     username: ${METADATA_DB_USERNAME}
     password: ${METADATA_DB_PASSWORD}
 
+vault:
+  address: ${VAULT_ADDRESS}
+  token: ${VAULT_DEV_ROOT_TOKEN}
+  kv-mount: secret
+  secret-path: ${VAULT_SECRET_PATH}
+
 db-operations:
   maximum-total-connections: 10
 
@@ -33,6 +39,8 @@ db-target-policy:
       engine: ORACLE
       jdbc-url: ${ORACLE_JDBC_URL}
       non-production-confirmed: true
+
+anonymous-user: anonymous
 
 logging:
   level:

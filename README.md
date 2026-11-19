@@ -3,7 +3,8 @@
 ## Local (project → environments → data-sources)
 
 Local and production use the same approach: a real Postgres metadata database + Flyway
-migrations + `/api/v1/projects` APIs. Locally, Postgres runs in Docker Compose.
+migrations + `/api/v1/projects` APIs. Locally, Postgres, Oracle, and dev-only Vault run
+in Docker Compose.
 
 1. Start Docker Desktop, then:
    ```powershell
@@ -18,21 +19,78 @@ migrations + `/api/v1/projects` APIs. Locally, Postgres runs in Docker Compose.
    $env:ORACLE_JDBC_URL = "jdbc:oracle:thin:@//127.0.0.1:1523/dbops"
    $env:ORACLE_DB_USERNAME = "dbops"
    $env:ORACLE_DB_PASSWORD = "change-me-app"
+   $env:VAULT_ADDRESS = "http://127.0.0.1:8200"
+   # Use the exact value you set in .env; this is only an example placeholder.
+   $env:VAULT_DEV_ROOT_TOKEN = "<your-local-vault-token>"
    .\gradlew.bat bootRun --args="--spring.profiles.active=local"
    ```
+   Compose runs Vault in development mode for local use only. Its data is in-memory
+   and is lost when the Vault container restarts. Configure the database credentials in
+   Vault before testing a project/environment datasource:
+
+   1. Open `http://127.0.0.1:8200` and sign in using the value of
+      `VAULT_DEV_ROOT_TOKEN` from `.env`.
+   2. Open the `secret/` KV v2 engine and create a secret at
+      `projects/WING_CORE/environments/UAT/data-sources/CORE_DB`.
+   3. Add `username` and `password` fields containing the Oracle login and its password,
+      then save. Do not put either credential in the API request or repository.
+   4. Set the request's `secretRef` to the relative path
+      `projects/WING_CORE/environments/UAT/data-sources/CORE_DB` (without `secret/`).
+
+   Create the matching logical datasource first with `POST /api/v1/data-sources`:
+   ```json
+   {
+     "dataSourceCode": "CORE_DB",
+     "dataSourceName": "Core Database",
+     "engine": "ORACLE"
+   }
+   ```
+   Then map it after mapping the project's UAT environment with
+   `POST /api/v1/projects/{projectId}/data-sources`:
+   ```json
+   {
+     "environment": "UAT",
+     "dataSourceCode": "CORE_DB",
+     "schemaName": "CORE_APP",
+     "jdbcUrl": "jdbc:oracle:thin:@//127.0.0.1:1523/FREEPDB1",
+     "secretRef": "projects/WING_CORE/environments/UAT/data-sources/CORE_DB",
+     "enabled": true
+   }
+   ```
+   Replace `CORE_APP` and the URL with the actual schema and Oracle service used by
+   your target. `secretRef` must match the Vault path; Vault's `username` and `password`
+   fields supply the target login credentials.
 3. Demo the hierarchy:
    ```powershell
    # Create project
    Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8080/api/v1/projects -ContentType application/json -Body '{"projectCode":"WING_CORE","projectName":"Core Banking Platform","ownerName":"Core Banking Team"}'
 
-   # Map environments, then data sources (use the returned projectId)
+   # Create reusable logical data-source definitions first
+   # POST /api/v1/data-sources
+   # {"dataSourceCode":"CORE_DB","dataSourceName":"Core Database","engine":"POSTGRESQL"}
+   #
+   # Map environments, then data sources (use the returned projectId).
+   # Mapping request contains environment, dataSourceCode, jdbcUrl, secretRef,
+   # and optional schemaName/enabled. Credentials come from Vault; engine comes from
+   # the logical definition.
    # POST /api/v1/projects/{projectId}/environments
    # POST /api/v1/projects/{projectId}/data-sources
+   # Test the target mapping with POST /api/v1/projects/{projectId}/data-sources/{mappingId}/test-connection
    # GET  /api/v1/projects/{projectId}
    ```
 
 Production uses the same Flyway scripts and APIs; only connection settings change
 (`METADATA_JDBC_URL`, `METADATA_DB_USERNAME`, `METADATA_DB_PASSWORD`).
+
+## Developer guide
+
+See [docs/DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md) for the architecture overview,
+metadata-versus-target database rules, JDBC API selection, security boundaries, migrations,
+and contribution workflow.
+See [docs/DATABASE_DESIGN.md](docs/DATABASE_DESIGN.md) for the full metadata relational
+model, target-database boundary, growth strategy, and migration compatibility guidance.
+Fresh-install SQL baselines are in `database/schema/postgresql` and `database/schema/oracle`;
+read the execution warnings in the database design document before running either script.
 
 ## Gradle maintenance
 

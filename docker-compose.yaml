@@ -1,4 +1,26 @@
 services:
+  vault:
+    image: hashicorp/vault:1.20
+    container_name: dbops-vault
+    restart: unless-stopped
+    cap_add:
+      - IPC_LOCK
+    command:
+      - server
+      - -dev
+      - -dev-root-token-id=${VAULT_DEV_ROOT_TOKEN:?Set VAULT_DEV_ROOT_TOKEN in .env}
+      - -dev-listen-address=0.0.0.0:8200
+    environment:
+      VAULT_ADDR: http://127.0.0.1:8200
+    ports:
+      - "127.0.0.1:8200:8200"
+    healthcheck:
+      test: ["CMD-SHELL", "vault status -address=http://127.0.0.1:8200"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
   postgres:
     build:
       context: ./docker/postgres
@@ -36,8 +58,8 @@ services:
     restart: unless-stopped
 
     environment:
-      ORACLE_DB: dbops
-      ORACLE_USER: dbops
+      ORACLE_DB: FREEPDB1
+      ORACLE_USER: DBOPS
       ORACLE_PASSWORD: ${ORACLE_DB_PASSWORD:?Set ORACLE_DB_PASSWORD in .env}
 
     ports:
@@ -45,9 +67,11 @@ services:
 
     volumes:
       - oracle-data:/opt/oracle/oradata
+      - ./docker/oracle:/opt/oracle/scripts/setup:ro
+      - ./docker/oracle/grant-privileges.sh:/opt/oracle/scripts/setup/grant-privileges.sh:ro
 
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5500/health"]
+      test: ["CMD", "/opt/oracle/checkDBStatus.sh"]
       interval: 30s
       timeout: 15s
       retries: 10

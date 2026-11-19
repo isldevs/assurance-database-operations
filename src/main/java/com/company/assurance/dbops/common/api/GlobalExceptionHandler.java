@@ -1,7 +1,10 @@
 package com.company.assurance.dbops.common.api;
 
+import com.company.assurance.dbops.datasource.api.exception.DataSourceAlreadyExistsException;
+import com.company.assurance.dbops.datasource.api.exception.DataSourceNotFoundException;
 import com.company.assurance.dbops.project.exception.DuplicateProjectMappingException;
 import com.company.assurance.dbops.project.exception.ProjectAlreadyExistsException;
+import com.company.assurance.dbops.project.exception.ProjectDataSourceNotFoundException;
 import com.company.assurance.dbops.project.exception.ProjectNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
@@ -15,6 +18,26 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(DataSourceNotFoundException.class)
+    ResponseEntity<ApiResponse<Void>> handleDataSourceNotFound(
+            DataSourceNotFoundException ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(
+                        ApiResponse.fail(
+                                ApiError.of("DATA_SOURCE_NOT_FOUND", ex.getMessage()),
+                                correlationId(request)));
+    }
+
+    @ExceptionHandler(DataSourceAlreadyExistsException.class)
+    ResponseEntity<ApiResponse<Void>> handleDataSourceConflict(
+            DataSourceAlreadyExistsException ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(
+                        ApiResponse.fail(
+                                ApiError.of("DATA_SOURCE_CONFLICT", ex.getMessage()),
+                                correlationId(request)));
+    }
+
     @ExceptionHandler(ProjectNotFoundException.class)
     ResponseEntity<ApiResponse<Void>> handleNotFound(
             ProjectNotFoundException ex, HttpServletRequest request) {
@@ -22,6 +45,16 @@ public class GlobalExceptionHandler {
                 .body(
                         ApiResponse.fail(
                                 ApiError.of("PROJECT_NOT_FOUND", ex.getMessage()),
+                                correlationId(request)));
+    }
+
+    @ExceptionHandler(ProjectDataSourceNotFoundException.class)
+    ResponseEntity<ApiResponse<Void>> handleProjectDataSourceNotFound(
+            ProjectDataSourceNotFoundException ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(
+                        ApiResponse.fail(
+                                ApiError.of("PROJECT_DATA_SOURCE_NOT_FOUND", ex.getMessage()),
                                 correlationId(request)));
     }
 

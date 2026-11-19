@@ -106,105 +106,79 @@ Standard response envelope (from the module design doc):
 
 ---
 
-## 5. Metadata database access: why JdbcClient (not JPA)
+## 5. JDBC API policy: JdbcClient vs JdbcTemplate
 
-This is the decision most often questioned. For **project / environment / datasource configuration**, we use:
+The service uses Spring JDBC, not JPA, for persistence. Both `JdbcClient` and
+`JdbcTemplate` execute SQL through JDBC and participate in Spring-managed transactions.
+They are complementary APIs, not competing database technologies.
 
-**PostgreSQL + Flyway migrations + Spring `JdbcClient`**
+### The distinction
 
-### What JdbcClient is
-- Modern Spring JDBC API (Spring Framework 6.1+).
-- Fluent wrapper over JDBC (same family as `JdbcTemplate`).
-- You write SQL; Spring binds parameters and maps rows.
-- **Not** legacy technology — it is the current recommended JDBC style in Spring.
+| API | Use it for | Typical strengths |
+|-----|------------|-------------------|
+| **`JdbcClient`** | Metadata repositories and ordinary query/command code | Fluent SQL, named parameters, concise row mapping, `optional()` / `list()` |
+| **`JdbcTemplate`** | Imperative database operations and lower-level JDBC workflows | Callback access to JDBC, batch/update operations, streaming, explicit statement/result-set control |
+| **Native database tools** | Engine-specific backup, restore, and advanced recovery | Correct engine semantics and operational tooling |
+| **SQL parser + policy checks** | Script validation before submission or execution | Syntax/policy analysis; it does not execute SQL |
 
-### Why it fits this module
-1. Schema is owned by **Flyway** (source of truth), not by ORM entity mappings.
-2. Queries are simple and must stay auditable / reviewable for a controlled DB-ops platform.
-3. Lower runtime overhead than JPA for small metadata tables.
-4. Exact SQL joins match the document model: Project → Environment → DataSource.
-5. Credentials / JDBC URLs stay under our control (never accidentally serialized by entity graphs).
+`JdbcClient` is a higher-level Spring JDBC API introduced in Spring Framework 6.1.
+It is built on Spring's JDBC infrastructure and uses the same transaction-bound
+connections as `JdbcTemplate`. Choose based on the operation, not on assumed
+performance differences.
 
-### Comparison with examples
+### Project policy by feature
 
-#### A) JdbcClient (chosen)
+| Module / feature | Default implementation |
+|-----------------|-------------------------|
+| Project management | `JdbcClient` |
+| Environment management | `JdbcClient` |
+| Data-source metadata management | `JdbcClient` |
+| Activity management | `JdbcClient` |
+| Script package metadata and versioning | `JdbcClient` |
+| Approval references and status | `JdbcClient` |
+| Execution history and audit metadata | `JdbcClient` |
+| Reporting | `JdbcClient`; use `JdbcTemplate` when streaming or lower-level JDBC control is needed |
+| Database connection testing | `JdbcTemplate` / JDBC |
+| SQL script verification | SQL parser plus policy validation; use `JdbcTemplate` only for controlled database-side checks |
+| SQL script execution | `JdbcTemplate` / JDBC in the isolated worker |
+| SQL rollback or compensation | `JdbcTemplate` / JDBC in the isolated worker |
+| Data backup and restore | Native database tools |
+| Flashback | `JdbcTemplate` / native database tools, restricted to DBA policy |
+| System configuration metadata | `JdbcClient` |
+| Message code metadata | `JdbcClient` |
+| Data masking | `JdbcTemplate` / JDBC in the isolated worker |
+| Data maintenance | `JdbcTemplate` / JDBC in the isolated worker |
+| Data migration | `JdbcTemplate` / JDBC in the isolated worker |
+| Data synchronization | `JdbcTemplate` / JDBC in the isolated worker |
+| Schema change | `JdbcTemplate` / JDBC in the isolated worker |
+| Database validation | `JdbcClient` for metadata/simple reads; `JdbcTemplate` for execution-oriented checks |
+| Database housekeeping | `JdbcTemplate` / native database tools |
 
-```java
-jdbcClient.sql("""
-        SELECT id, project_code, project_name, owner_name, status, created_at, updated_at
-        FROM db_project
-        WHERE id = :id
-        """)
-    .param("id", projectId)
-    .query((rs, rowNum) -> new Project(...))
-    .optional();
-```
+### Safety rules for execution features
 
-| Pros | Cons |
-|------|------|
-| Explicit SQL, easy to review | More SQL written by hand |
-| Predictable performance | Less “magic” for complex graphs |
-| Maps 1:1 to Flyway tables | No automatic dirty checking |
-| Excellent for ops / audit-heavy systems | |
+- Metadata repositories bind all values and keep SQL explicit and reviewable.
+- `JdbcTemplate` is not a SQL security boundary. Script execution requires authorization,
+  parser and policy validation, allowlisted targets, least-privilege database accounts,
+  statement timeouts, result limits, and audit records.
+- Bind parameters are for values. Identifiers and SQL structure cannot generally be bound;
+  validate those against explicit allowlists rather than concatenating untrusted input.
+- Run long-running scripts in the separate worker, never synchronously in an API request.
+- JDBC rollback is not a universal recovery mechanism. Oracle DDL can implicitly commit;
+  use approved compensating actions or native recovery procedures instead.
+- Backup artifacts should be produced and restored with engine-appropriate native tooling,
+  then verified and tracked by metadata, checksums, and retention policy.
 
-#### B) Spring Data JPA / Hibernate
+### Why not JPA for this metadata layer?
 
-```java
-@Entity
-class ProjectEntity {
-    @OneToMany(mappedBy = "project")
-    List<ProjectEnvironmentEntity> environments;
-}
+Flyway owns the schema, and metadata operations should have visible SQL, explicit joins,
+and deliberate result mapping. `JdbcClient` keeps that work small and auditable without
+introducing ORM entity state, implicit flushes, or relationship-loading behavior. JPA
+could fit a future entity-heavy CRUD domain, but it is not the default for this operations
+metadata service.
 
-projectRepository.findById(id); // may trigger lazy loads / joins
-```
-
-| Pros | Cons |
-|------|------|
-| Fast feature coding for rich domains | Hidden SQL, N+1 risk |
-| Relationship navigation | Extra memory / flush / session cost |
-| Large ecosystem | Easy to leak fields (e.g. jdbcUrl) in JSON if not careful |
-
-**When JPA would be better:** large CRUD admin domains with many relations and little custom SQL.  
-**For this Phase 1 metadata:** JdbcClient is the better default.
-
-#### C) jOOQ
-
-```java
-dsl.selectFrom(DB_PROJECT)
-   .where(DB_PROJECT.ID.eq(projectId))
-   .fetchOptionalInto(Project.class);
-```
-
-| Pros | Cons |
-|------|------|
-| Type-safe SQL, still JDBC-fast | Extra codegen / build complexity |
-| Great for complex reporting SQL | Another tool for the team to learn |
-
-**Possible future upgrade** if reporting queries become complex — without giving up JDBC performance.
-
-#### D) R2DBC (reactive)
-
-| Pros | Cons |
-|------|------|
-| Non-blocking DB I/O | Needs fully reactive stack |
-| | Poor fit with current Tomcat + JDBC workers + Oracle driver reality |
-| | Harder transaction / team model |
-
-**Not chosen:** this service is request/thread + worker/queue oriented, not a reactive pipeline.
-
-### Performance reality check
-
-For metadata tables (`db_project`, mappings), **JdbcClient and jOOQ are typically as fast or faster than JPA**.
-
-Real performance risk in Database Operations is **not** the ORM choice — it is:
-
-- target database pool sizing (Hikari)
-- concurrent executions across environments
-- worker throughput and queue design
-- backup/restore I/O
-
-That is why the project already models `maximum-total-connections` and per-pool limits.
+The significant performance and reliability risks are target-pool sizing, execution
+concurrency, worker throughput, and backup I/O—not choosing between `JdbcClient` and
+`JdbcTemplate`.
 
 ---
 
@@ -281,7 +255,7 @@ WING_CORE + STAGE + CORE_DB  → pool B   (same code, different environment/targ
 
 ### Example
 ```text
-src/main/resources/db/migration/V1__project_hierarchy.sql
+src/main/resources/db/migration/V1__database_operations_schema.sql
 ```
 
 Creates:

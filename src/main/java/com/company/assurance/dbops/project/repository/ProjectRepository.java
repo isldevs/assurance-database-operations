@@ -6,6 +6,7 @@ import com.company.assurance.dbops.project.entity.Project;
 import com.company.assurance.dbops.project.entity.ProjectDataSourceMapping;
 import com.company.assurance.dbops.project.entity.ProjectEnvironmentMapping;
 import com.company.assurance.dbops.project.entity.ProjectStatus;
+import com.company.assurance.dbops.project.entity.PromotionMode;
 import com.company.assurance.dbops.project.exception.DuplicateProjectMappingException;
 import com.company.assurance.dbops.project.exception.ProjectAlreadyExistsException;
 import java.sql.Timestamp;
@@ -17,6 +18,12 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Uses {@link JdbcClient} so project and mapping queries stay explicit, reviewable, and aligned
+ * with the Flyway-owned schema. This small metadata model does not need JPA's entity lifecycle or
+ * relationship-loading behavior. Use {@code JdbcTemplate} / JDBC in the worker for operational
+ * database execution, not in this metadata repository.
+ */
 @Repository
 public class ProjectRepository {
 
@@ -30,7 +37,8 @@ public class ProjectRepository {
         return jdbcClient
                 .sql(
                         """
-                        SELECT id, project_code, project_name, owner_name, status, created_at, updated_at
+                        SELECT id, project_code, project_name, owner_name, status, promotion_mode,
+                               created_by, created_at, updated_at
                         FROM db_project
                         WHERE id = :id
                         """)
@@ -43,6 +51,8 @@ public class ProjectRepository {
                                         rs.getString("project_name"),
                                         rs.getString("owner_name"),
                                         ProjectStatus.valueOf(rs.getString("status")),
+                                        PromotionMode.valueOf(rs.getString("promotion_mode")),
+                                        rs.getString("created_by"),
                                         rs.getTimestamp("created_at").toInstant(),
                                         rs.getTimestamp("updated_at").toInstant()))
                 .optional();
@@ -52,7 +62,8 @@ public class ProjectRepository {
         return jdbcClient
                 .sql(
                         """
-                        SELECT id, project_code, project_name, owner_name, status, created_at, updated_at
+                        SELECT id, project_code, project_name, owner_name, status, promotion_mode,
+                               created_by, created_at, updated_at
                         FROM db_project
                         WHERE project_code = :projectCode
                         """)
@@ -65,6 +76,8 @@ public class ProjectRepository {
                                         rs.getString("project_name"),
                                         rs.getString("owner_name"),
                                         ProjectStatus.valueOf(rs.getString("status")),
+                                        PromotionMode.valueOf(rs.getString("promotion_mode")),
+                                        rs.getString("created_by"),
                                         rs.getTimestamp("created_at").toInstant(),
                                         rs.getTimestamp("updated_at").toInstant()))
                 .optional();
@@ -74,7 +87,8 @@ public class ProjectRepository {
         return jdbcClient
                 .sql(
                         """
-                        SELECT id, project_code, project_name, owner_name, status, created_at, updated_at
+                        SELECT id, project_code, project_name, owner_name, status, promotion_mode,
+                               created_by, created_at, updated_at
                         FROM db_project
                         ORDER BY project_code
                         """)
@@ -86,6 +100,8 @@ public class ProjectRepository {
                                         rs.getString("project_name"),
                                         rs.getString("owner_name"),
                                         ProjectStatus.valueOf(rs.getString("status")),
+                                        PromotionMode.valueOf(rs.getString("promotion_mode")),
+                                        rs.getString("created_by"),
                                         rs.getTimestamp("created_at").toInstant(),
                                         rs.getTimestamp("updated_at").toInstant()))
                 .list();
@@ -97,15 +113,19 @@ public class ProjectRepository {
                     .sql(
                             """
                             INSERT INTO db_project
-                                (id, project_code, project_name, owner_name, status, created_at, updated_at)
+                                (id, project_code, project_name, owner_name, status, promotion_mode,
+                                 created_by, created_at, updated_at)
                             VALUES
-                                (:id, :projectCode, :projectName, :ownerName, :status, :createdAt, :updatedAt)
+                                (:id, :projectCode, :projectName, :ownerName, :status, :promotionMode,
+                                 :createdBy, :createdAt, :updatedAt)
                             """)
                     .param("id", project.id())
                     .param("projectCode", project.projectCode())
                     .param("projectName", project.projectName())
                     .param("ownerName", project.ownerName())
                     .param("status", project.status().name())
+                    .param("promotionMode", project.promotionMode().name())
+                    .param("createdBy", project.createdBy())
                     .param("createdAt", Timestamp.from(project.createdAt()))
                     .param("updatedAt", Timestamp.from(project.updatedAt()))
                     .update();
@@ -188,24 +208,54 @@ public class ProjectRepository {
                                pe.project_id,
                                ds.project_environment_id,
                                pe.environment_code,
-                               ds.data_source_code,
-                               ds.engine,
+                               source.id AS data_source_id,
+                               source.data_source_code,
+                               source.engine,
                                ds.schema_name,
                                ds.jdbc_url,
-                               ds.username,
                                ds.secret_ref,
                                ds.enabled,
                                ds.created_at,
                                ds.updated_at
                         FROM db_project_env_datasource ds
                         INNER JOIN db_project_environment pe ON pe.id = ds.project_environment_id
-                        INNER JOIN db_environment e ON e.code = pe.environment_code
+                        INNER JOIN db_environment env ON env.code = pe.environment_code
+                        INNER JOIN db_data_source source ON source.id = ds.data_source_id
                         WHERE pe.project_id = :projectId
-                        ORDER BY e.sort_order, ds.data_source_code
+                        ORDER BY env.sort_order, source.data_source_code
                         """)
                 .param("projectId", projectId)
                 .query((rs, rowNum) -> mapDataSource(rs))
                 .list();
+    }
+
+    public Optional<ProjectDataSourceMapping> findDataSource(
+            String projectId, String projectDataSourceId) {
+        return jdbcClient
+                .sql(
+                        """
+                        SELECT ds.id,
+                               pe.project_id,
+                               ds.project_environment_id,
+                               pe.environment_code,
+                               source.id AS data_source_id,
+                               source.data_source_code,
+                               source.engine,
+                               ds.schema_name,
+                               ds.jdbc_url,
+                               ds.secret_ref,
+                               ds.enabled,
+                               ds.created_at,
+                               ds.updated_at
+                        FROM db_project_env_datasource ds
+                        INNER JOIN db_project_environment pe ON pe.id = ds.project_environment_id
+                        INNER JOIN db_data_source source ON source.id = ds.data_source_id
+                        WHERE pe.project_id = :projectId AND ds.id = :id
+                        """)
+                .param("projectId", projectId)
+                .param("id", projectDataSourceId)
+                .query((rs, rowNum) -> mapDataSource(rs))
+                .optional();
     }
 
     public void insertDataSource(ProjectDataSourceMapping mapping) {
@@ -214,19 +264,17 @@ public class ProjectRepository {
                     .sql(
                             """
                             INSERT INTO db_project_env_datasource
-                                (id, project_environment_id, data_source_code, engine, schema_name,
-                                 jdbc_url, username, secret_ref, enabled, created_at, updated_at)
+                                (id, project_environment_id, data_source_id, schema_name,
+                                 jdbc_url, secret_ref, enabled, created_at, updated_at)
                             VALUES
-                                (:id, :projectEnvironmentId, :dataSourceCode, :engine, :schemaName,
-                                 :jdbcUrl, :username, :secretRef, :enabled, :createdAt, :updatedAt)
+                                (:id, :projectEnvironmentId, :dataSourceId, :schemaName,
+                                 :jdbcUrl, :secretRef, :enabled, :createdAt, :updatedAt)
                             """)
                     .param("id", mapping.id())
                     .param("projectEnvironmentId", mapping.projectEnvironmentId())
-                    .param("dataSourceCode", mapping.dataSourceCode())
-                    .param("engine", mapping.engine().name())
+                    .param("dataSourceId", mapping.dataSourceId())
                     .param("schemaName", mapping.schemaName())
                     .param("jdbcUrl", mapping.jdbcUrl())
-                    .param("username", mapping.username())
                     .param("secretRef", mapping.secretRef())
                     .param("enabled", mapping.enabled())
                     .param("createdAt", Timestamp.from(mapping.createdAt()))
@@ -262,11 +310,11 @@ public class ProjectRepository {
                 rs.getString("project_id"),
                 rs.getString("project_environment_id"),
                 Environment.valueOf(rs.getString("environment_code")),
+                rs.getString("data_source_id"),
                 rs.getString("data_source_code"),
                 DatabaseEngine.valueOf(rs.getString("engine")),
                 rs.getString("schema_name"),
                 rs.getString("jdbc_url"),
-                rs.getString("username"),
                 rs.getString("secret_ref"),
                 rs.getBoolean("enabled"),
                 rs.getTimestamp("created_at").toInstant(),
