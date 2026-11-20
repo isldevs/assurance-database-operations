@@ -3,6 +3,7 @@ package com.company.assurance.dbops.common.api;
 import com.company.assurance.dbops.datasource.api.exception.DataSourceAlreadyExistsException;
 import com.company.assurance.dbops.datasource.api.exception.DataSourceNotFoundException;
 import com.company.assurance.dbops.datasource.exception.VaultSecretException;
+import com.company.assurance.dbops.datasource.validation.TargetNotApprovedException;
 import com.company.assurance.dbops.project.exception.DuplicateProjectMappingException;
 import com.company.assurance.dbops.project.exception.ProjectAlreadyExistsException;
 import com.company.assurance.dbops.project.exception.ProjectDataSourceNotFoundException;
@@ -106,6 +107,17 @@ public class GlobalExceptionHandler {
                         ApiResponse.fail(
                                 ApiError.of(
                                         "VALIDATION_FAILED", "Request validation failed", details),
+                                correlationId(request)));
+    }
+
+    @ExceptionHandler(TargetNotApprovedException.class)
+    ResponseEntity<ApiResponse<Void>> handleTargetNotApproved(
+            TargetNotApprovedException ex, HttpServletRequest request) {
+        log.warn("Unapproved database target rejected: correlationId={}", correlationId(request));
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(
+                        ApiResponse.fail(
+                                ApiError.of("TARGET_NOT_APPROVED", "Database target is not approved"),
                                 correlationId(request)));
     }
 

@@ -1,6 +1,8 @@
 package com.company.assurance.dbops.datasource.connection;
 
+import com.company.assurance.dbops.datasource.DataSourceKey;
 import com.company.assurance.dbops.datasource.engine.DatabaseEngine;
+import com.company.assurance.dbops.datasource.validation.TargetApprovalValidator;
 import java.util.Arrays;
 import java.util.Properties;
 import org.springframework.jdbc.core.ConnectionCallback;
@@ -11,8 +13,16 @@ import org.springframework.stereotype.Component;
 @Component
 public class DataSourceConnectionTester {
 
-    public boolean test(DatabaseEngine engine, String jdbcUrl, String username, char[] password) {
+    private final TargetApprovalValidator targetApprovalValidator;
+
+    public DataSourceConnectionTester(TargetApprovalValidator targetApprovalValidator) {
+        this.targetApprovalValidator = targetApprovalValidator;
+    }
+
+    public boolean test(
+            DataSourceKey key, DatabaseEngine engine, String jdbcUrl, String username, char[] password) {
         try {
+            targetApprovalValidator.assertApproved(key, engine, jdbcUrl);
             DriverManagerDataSource target = new DriverManagerDataSource();
             target.setDriverClassName(driverClassName(engine));
             target.setUrl(jdbcUrl);

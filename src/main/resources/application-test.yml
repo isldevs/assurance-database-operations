@@ -43,4 +43,22 @@ db-operations:
         maximum-pool-size: 1
 
 db-target-policy:
-  approved-targets: []
+  approved-targets:
+    - project-code: WING_CORE
+      environment: UAT
+      data-source-code: CORE_DB_WING
+      engine: POSTGRESQL
+      jdbc-url: jdbc:postgresql://127.0.0.1:5433/uat_core
+      non-production-confirmed: true
+    - project-code: WING_CORE
+      environment: UAT
+      data-source-code: PERSONA_DB_WING
+      engine: POSTGRESQL
+      jdbc-url: jdbc:postgresql://127.0.0.1:5433/uat_persona
+      non-production-confirmed: true
+    - project-code: WING_CORE
+      environment: STAGE
+      data-source-code: CORE_DB_WING
+      engine: POSTGRESQL
+      jdbc-url: jdbc:postgresql://127.0.0.1:5433/stage_core
+      non-production-confirmed: true

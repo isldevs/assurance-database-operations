@@ -9,6 +9,7 @@ import com.company.assurance.dbops.datasource.api.exception.DataSourceNotFoundEx
 import com.company.assurance.dbops.datasource.api.repository.DataSourceRepository;
 import com.company.assurance.dbops.datasource.connection.DataSourceConnectionTester;
 import com.company.assurance.dbops.datasource.engine.DatabaseEngine;
+import com.company.assurance.dbops.datasource.validation.TargetApprovalValidator;
 import com.company.assurance.dbops.environment.Environment;
 import com.company.assurance.dbops.project.data.request.CreateProjectRequest;
 import com.company.assurance.dbops.project.data.request.MapDataSourceRequest;
@@ -49,6 +50,7 @@ public class ProjectService {
     private final DataSourceConnectionTester connectionTester;
     private final CustomSecurityContextHolder securityContextHolder;
     private final Clock clock;
+    private final TargetApprovalValidator targetApprovalValidator;
 
     public ProjectService(
             ProjectRepository projectRepository,
@@ -57,7 +59,8 @@ public class ProjectService {
             ProjectDataSourceSecretRefFactory secretRefFactory,
             DataSourceConnectionTester connectionTester,
             CustomSecurityContextHolder securityContextHolder,
-            Clock clock) {
+            Clock clock,
+            TargetApprovalValidator targetApprovalValidator) {
         this.projectRepository = projectRepository;
         this.dataSourceRepository = dataSourceRepository;
         this.secretResolver = secretResolver;
@@ -65,6 +68,7 @@ public class ProjectService {
         this.connectionTester = connectionTester;
         this.securityContextHolder = securityContextHolder;
         this.clock = clock;
+        this.targetApprovalValidator = targetApprovalValidator;
     }
 
     @Transactional
@@ -138,7 +142,9 @@ public class ProjectService {
             throw new IllegalArgumentException(
                     "Data source is disabled: " + definition.dataSourceCode());
         }
-        validateJdbcUrl(definition.engine(), request.jdbcUrl());
+        String jdbcUrl = request.jdbcUrl().strip();
+        validateJdbcUrl(definition.engine(), jdbcUrl);
+        targetApprovalValidator.assertApproved(key, definition.engine(), jdbcUrl);
 
         ProjectEnvironmentMapping environmentMapping =
                 projectRepository
@@ -166,7 +172,7 @@ public class ProjectService {
                         key.dataSourceCode(),
                         definition.engine(),
                         blankToNull(request.schemaName()),
-                        request.jdbcUrl().strip(),
+                        jdbcUrl,
                         secretRef.strip(),
                         request.enabledOrDefault(),
                         now,
@@ -187,11 +193,16 @@ public class ProjectService {
             throw new IllegalArgumentException(
                     "Project data source is disabled: " + projectDataSourceId);
         }
+        Project project = requireProject(projectId);
+        DataSourceKey key =
+                new DataSourceKey(project.projectCode(), mapping.environment(), mapping.dataSourceCode());
+        targetApprovalValidator.assertApproved(key, mapping.engine(), mapping.jdbcUrl());
         long startedAt = System.nanoTime();
         DatabaseCredentials credentials = secretResolver.resolve(mapping.secretRef());
         try {
             boolean connected =
                     connectionTester.test(
+                            key,
                             mapping.engine(),
                             mapping.jdbcUrl(),
                             credentials.username(),

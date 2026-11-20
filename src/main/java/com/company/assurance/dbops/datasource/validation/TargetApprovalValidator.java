@@ -5,6 +5,7 @@ import com.company.assurance.dbops.datasource.config.DataSourceRegistrationPrope
 import com.company.assurance.dbops.datasource.config.DatabaseOperationsProperties;
 import com.company.assurance.dbops.datasource.config.TargetApprovalProperties;
 import com.company.assurance.dbops.datasource.config.TargetApprovalProperties.ApprovedTarget;
+import com.company.assurance.dbops.datasource.engine.DatabaseEngine;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.stereotype.Component;
@@ -37,11 +38,15 @@ public final class TargetApprovalValidator {
     }
 
     public void assertApproved(DataSourceRegistrationProperties registration) {
-        ApprovedTarget approved = approvedTargets.get(registration.key());
+        assertApproved(registration.key(), registration.engine(), registration.jdbcUrl());
+    }
+
+    public void assertApproved(DataSourceKey key, DatabaseEngine engine, String jdbcUrl) {
+        ApprovedTarget approved = approvedTargets.get(key);
 
         if (approved == null
-                || approved.engine() != registration.engine()
-                || !approved.jdbcUrl().equals(registration.jdbcUrl())) {
+                || approved.engine() != engine
+                || !approved.jdbcUrl().equals(jdbcUrl)) {
             throw new TargetNotApprovedException();
         }
     }

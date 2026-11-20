@@ -188,6 +188,20 @@ class ProjectApiIntegrationTests {
                                 """))
                 .andExpect(status().isCreated());
 
+        mockMvc.perform(
+                        post("/api/v1/projects/{projectId}/data-sources", projectId)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                {
+                                  "environment": "UAT",
+                                  "dataSourceCode": "CORE_DB_WING",
+                                  "jdbcUrl": "jdbc:postgresql://127.0.0.1:5433/unapproved"
+                                }
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("TARGET_NOT_APPROVED"));
+
         MvcResult detailResult =
                 mockMvc.perform(get("/api/v1/projects/{projectId}", projectId))
                         .andExpect(status().isOk())

@@ -176,3 +176,10 @@ display the new version on startup. If it is absent, the banner uses the build
 version. Set the image tag and `APP_VERSION` from the same pipeline release value
 to keep the displayed version consistent with the deployed artifact. The runtime
 override changes the displayed version; the JAR's build version stays the same.
+
+### Target approval
+
+Dynamic datasource mappings and connection tests require an exact matching entry in
+`db-target-policy.approved-targets`. Add administrator-approved non-production targets
+to the active profile before mapping them; the default policy denies unknown targets.
+See [development guide](docs/DEVELOPMENT_GUIDE.md) for details.
