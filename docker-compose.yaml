@@ -3,19 +3,16 @@ services:
     image: hashicorp/vault:1.20
     container_name: dbops-vault
     restart: unless-stopped
-    cap_add:
-      - IPC_LOCK
-    command:
-      - server
-      - -dev
-      - -dev-root-token-id=${VAULT_DEV_ROOT_TOKEN:?Set VAULT_DEV_ROOT_TOKEN in .env}
-      - -dev-listen-address=0.0.0.0:8200
+    command: server
     environment:
       VAULT_ADDR: http://127.0.0.1:8200
+    volumes:
+      - vault-data:/vault/file
+      - ./docker/vault/vault.hcl:/vault/config/vault.hcl:ro
     ports:
       - "127.0.0.1:8200:8200"
     healthcheck:
-      test: ["CMD-SHELL", "vault status -address=http://127.0.0.1:8200"]
+      test: [ "CMD-SHELL", "vault status" ]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -80,3 +77,4 @@ services:
 volumes:
   postgres-data:
   oracle-data:
+  vault-data:

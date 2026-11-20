@@ -135,7 +135,7 @@ Use that same relative path in the mapping request's `secretRef`. The API does n
 accept or return the target username or password.
 
 Docker Compose exposes local Vault only on loopback at `127.0.0.1:8200`. Its dev server
-uses the root token in `VAULT_DEV_ROOT_TOKEN`, stores data only in memory, and must never
+uses the root token in `VAULT_TOKEN`, stores data only in memory, and must never
 be used for shared or production environments. Recreate local secrets after restarting
 Vault. For deployed environments, use Vault with TLS and persistent/HA storage, an
 application workload identity (not a root token), a narrowly scoped policy granting

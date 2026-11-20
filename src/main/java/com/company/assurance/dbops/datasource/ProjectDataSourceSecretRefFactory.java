@@ -19,9 +19,9 @@ public class ProjectDataSourceSecretRefFactory {
     private static final Pattern TEMPLATE_PLACEHOLDER = Pattern.compile("\\{([A-Z_]+)}");
     private static final String PROJECT_CODE = "PROJECT_CODE";
     private static final String ENVIRONMENT = "ENVIRONMENT";
-    private static final String DATA_SOURCE_CODE = "DATA_SOURCE_CODE";
+    private static final String DATA_SOURCE = "DATA_SOURCE";
     private static final Set<String> REQUIRED_PLACEHOLDERS =
-            Set.of(PROJECT_CODE, ENVIRONMENT, DATA_SOURCE_CODE);
+            Set.of(PROJECT_CODE, ENVIRONMENT, DATA_SOURCE);
 
     private final String pathTemplate;
 
@@ -35,7 +35,7 @@ public class ProjectDataSourceSecretRefFactory {
                 Map.of(
                         PROJECT_CODE, normalizeSegment(projectCode, PROJECT_CODE),
                         ENVIRONMENT, normalizeSegment(environment, ENVIRONMENT),
-                        DATA_SOURCE_CODE, normalizeDataSourceCode(dataSourceCode));
+                        DATA_SOURCE, normalizeDataSourceCode(dataSourceCode));
         Matcher matcher = TEMPLATE_PLACEHOLDER.matcher(pathTemplate);
         StringBuilder path = new StringBuilder(pathTemplate.length());
         while (matcher.find()) {
@@ -61,20 +61,20 @@ public class ProjectDataSourceSecretRefFactory {
     }
 
     private static String normalizeDataSourceCode(String dataSourceCode) {
-        String normalized = normalizeSegment(dataSourceCode, DATA_SOURCE_CODE);
+        String normalized = normalizeSegment(dataSourceCode, DATA_SOURCE);
         if (normalized.endsWith("_DB")) {
             normalized = normalized.substring(0, normalized.length() - "_DB".length());
         }
         if (normalized.isBlank()) {
             throw new IllegalArgumentException(
-                    "Invalid " + DATA_SOURCE_CODE + " for Vault secret path");
+                    "Invalid " + DATA_SOURCE + " for Vault secret path");
         }
         if (!normalized.startsWith("WING_")) {
             normalized = "WING_" + normalized;
         }
         if (!SAFE_SEGMENT.matcher(normalized).matches()) {
             throw new IllegalArgumentException(
-                    "Invalid " + DATA_SOURCE_CODE + " for Vault secret path");
+                    "Invalid " + DATA_SOURCE + " for Vault secret path");
         }
         return normalized;
     }

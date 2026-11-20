@@ -2,21 +2,26 @@ package com.company.assurance.dbops.common.api;
 
 import com.company.assurance.dbops.datasource.api.exception.DataSourceAlreadyExistsException;
 import com.company.assurance.dbops.datasource.api.exception.DataSourceNotFoundException;
+import com.company.assurance.dbops.datasource.exception.VaultSecretException;
 import com.company.assurance.dbops.project.exception.DuplicateProjectMappingException;
 import com.company.assurance.dbops.project.exception.ProjectAlreadyExistsException;
 import com.company.assurance.dbops.project.exception.ProjectDataSourceNotFoundException;
 import com.company.assurance.dbops.project.exception.ProjectNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
-import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.List;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    private final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(DataSourceNotFoundException.class)
     ResponseEntity<ApiResponse<Void>> handleDataSourceNotFound(
@@ -105,13 +110,37 @@ public class GlobalExceptionHandler {
                                 correlationId(request)));
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    ResponseEntity<ApiResponse<Void>> handleIllegalArgument(
-            IllegalArgumentException ex, HttpServletRequest request) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(VaultSecretException.class)
+    ResponseEntity<ApiResponse<Void>> handleVaultSecret(
+            VaultSecretException ex, HttpServletRequest request) {
+
+        HttpStatus status = switch (ex.getCode()) {
+            case "VAULT_CONNECTION_FAILED" ->
+                    HttpStatus.SERVICE_UNAVAILABLE;
+
+            case "VAULT_SECRET_RETRIEVAL_FAILED",
+                 "VAULT_INVALID_SECRET",
+                 "VAULT_SECRET_FIELD_MISSING" ->
+                    HttpStatus.BAD_GATEWAY;
+
+            default -> HttpStatus.INTERNAL_SERVER_ERROR;
+        };
+
+        log.error(
+                "Vault operation failed: code={}, correlationId={}",
+                ex.getCode(),
+                correlationId(request));
+
+        List<ApiErrorDetail> details = List.of(
+                new ApiErrorDetail("vault", ex.getCode()));
+
+        return ResponseEntity.status(status)
                 .body(
                         ApiResponse.fail(
-                                ApiError.of("BAD_REQUEST", ex.getMessage()),
+                                ApiError.of(
+                                        status.name(),
+                                        status.getReasonPhrase(),
+                                        details),
                                 correlationId(request)));
     }
 

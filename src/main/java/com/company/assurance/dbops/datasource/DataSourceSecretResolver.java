@@ -2,6 +2,10 @@ package com.company.assurance.dbops.datasource;
 
 import java.time.Duration;
 import java.util.regex.Pattern;
+
+import com.company.assurance.dbops.datasource.exception.VaultSecretException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -11,10 +15,12 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.MissingNode;
 
 @Component
 public class DataSourceSecretResolver {
 
+    private final Logger log = LoggerFactory.getLogger(DataSourceSecretResolver.class);
     private static final Pattern SECRET_REFERENCE =
             Pattern.compile("[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*");
     private static final Pattern MOUNT_NAME = Pattern.compile("[A-Za-z0-9_-]+");
@@ -50,36 +56,60 @@ public class DataSourceSecretResolver {
     public DatabaseCredentials resolve(String secretRef) {
         validateReference(secretRef);
         JsonNode response;
+        String uri = "/v1/" + mount + "/data/" + secretRef;
         try {
             response =
                     restClient
                             .get()
-                            .uri("/v1/" + mount + "/data/" + secretRef)
+                            .uri(uri)
                             .header("X-Vault-Token", token)
-                            .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                            .accept(MediaType.APPLICATION_JSON)
                             .retrieve()
                             .body(JsonNode.class);
+
         } catch (RestClientResponseException ex) {
-            throw new IllegalStateException(
-                    "Vault could not retrieve the configured database secret (HTTP "
-                            + ex.getStatusCode().value()
-                            + ")");
+            int status = ex.getStatusCode().value();
+
+            String code = switch (status) {
+                case 403 -> "VAULT_ACCESS_DENIED";
+                case 404 -> "VAULT_SECRET_PATH_NOT_FOUND";
+                case 503 -> "VAULT_UNAVAILABLE";
+                default -> "VAULT_SECRET_RETRIEVAL_FAILED";
+            };
+
+            log.error(
+                    "Vault secret retrieval failed: status={}, code={}, uri={}",
+                    status,
+                    code,
+                    uri);
+
+            throw new VaultSecretException(code, ex);
         } catch (RestClientException ex) {
-            throw new IllegalStateException("Could not contact Vault to resolve database secret");
+            throw new VaultSecretException("VAULT_CONNECTION_FAILED", ex);
+        }
+        JsonNode secret = response == null
+                ? MissingNode.getInstance()
+                : response.path("data").path("data");
+        if (!secret.isObject()) {
+            throw new VaultSecretException("VAULT_INVALID_SECRET");
         }
 
-        JsonNode secret = response == null ? null : response.path("data").path("data");
-        String username = secret == null ? null : secret.path("username").asString();
-        String password = secret == null ? null : secret.path("password").asString();
-        if (username == null || username.isBlank()) {
-            throw new IllegalStateException(
-                    "Vault secret is missing the required username field: " + secretRef);
+        String username = requiredField(secret, "username");
+        String password = requiredField(secret, "password");
+
+        return new DatabaseCredentials(
+                username,
+                password.toCharArray());
+    }
+
+    private String requiredField(JsonNode secret, String field) {
+        JsonNode value = secret.path(field);
+        if (!value.isString() || value.asString().isBlank()) {
+            throw new VaultSecretException(
+                    "VAULT_SECRET_FIELD_MISSING", field);
         }
-        if (password == null || password.isBlank()) {
-            throw new IllegalStateException(
-                    "Vault secret is missing the required password field: " + secretRef);
-        }
-        return new DatabaseCredentials(username, password.toCharArray());
+
+        return value.asString();
     }
 
     private void validateReference(String secretRef) {

@@ -21,7 +21,7 @@ in Docker Compose.
    $env:ORACLE_DB_PASSWORD = "change-me-app"
    $env:VAULT_ADDRESS = "http://127.0.0.1:8200"
    # Use the exact value you set in .env; this is only an example placeholder.
-   $env:VAULT_DEV_ROOT_TOKEN = "<your-local-vault-token>"
+   $env:VAULT_TOKEN = "<your-local-vault-token>"
    .\gradlew.bat bootRun --args="--spring.profiles.active=local"
    ```
    Compose runs Vault in development mode for local use only. Its data is in-memory
@@ -29,7 +29,7 @@ in Docker Compose.
    Vault before testing a project/environment datasource:
 
    1. Open `http://127.0.0.1:8200` and sign in using the value of
-      `VAULT_DEV_ROOT_TOKEN` from `.env`.
+      `VAULT_TOKEN` from `.env`.
    2. Open the `secret/` KV v2 engine and create a secret at
       `projects/WING_CORE/environments/UAT/data-sources/CORE_DB`.
    3. Add `username` and `password` fields containing the Oracle login and its password,
