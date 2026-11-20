@@ -66,15 +66,13 @@ public class ProjectDataSourceSecretRefFactory {
             normalized = normalized.substring(0, normalized.length() - "_DB".length());
         }
         if (normalized.isBlank()) {
-            throw new IllegalArgumentException(
-                    "Invalid " + DATA_SOURCE + " for Vault secret path");
+            throw new IllegalArgumentException("Invalid " + DATA_SOURCE + " for Vault secret path");
         }
         if (!normalized.startsWith("WING_")) {
             normalized = "WING_" + normalized;
         }
         if (!SAFE_SEGMENT.matcher(normalized).matches()) {
-            throw new IllegalArgumentException(
-                    "Invalid " + DATA_SOURCE + " for Vault secret path");
+            throw new IllegalArgumentException("Invalid " + DATA_SOURCE + " for Vault secret path");
         }
         return normalized;
     }

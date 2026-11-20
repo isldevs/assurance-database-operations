@@ -9,6 +9,7 @@ import com.company.assurance.dbops.project.exception.ProjectDataSourceNotFoundEx
 import com.company.assurance.dbops.project.exception.ProjectNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -16,8 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import java.util.List;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -114,33 +113,29 @@ public class GlobalExceptionHandler {
     ResponseEntity<ApiResponse<Void>> handleVaultSecret(
             VaultSecretException ex, HttpServletRequest request) {
 
-        HttpStatus status = switch (ex.getCode()) {
-            case "VAULT_CONNECTION_FAILED" ->
-                    HttpStatus.SERVICE_UNAVAILABLE;
+        HttpStatus status =
+                switch (ex.getCode()) {
+                    case "VAULT_CONNECTION_FAILED" -> HttpStatus.SERVICE_UNAVAILABLE;
 
-            case "VAULT_SECRET_RETRIEVAL_FAILED",
-                 "VAULT_INVALID_SECRET",
-                 "VAULT_SECRET_FIELD_MISSING" ->
-                    HttpStatus.BAD_GATEWAY;
+                    case "VAULT_SECRET_RETRIEVAL_FAILED",
+                            "VAULT_INVALID_SECRET",
+                            "VAULT_SECRET_FIELD_MISSING" ->
+                            HttpStatus.BAD_GATEWAY;
 
-            default -> HttpStatus.INTERNAL_SERVER_ERROR;
-        };
+                    default -> HttpStatus.INTERNAL_SERVER_ERROR;
+                };
 
         log.error(
                 "Vault operation failed: code={}, correlationId={}",
                 ex.getCode(),
                 correlationId(request));
 
-        List<ApiErrorDetail> details = List.of(
-                new ApiErrorDetail("vault", ex.getCode()));
+        List<ApiErrorDetail> details = List.of(new ApiErrorDetail("vault", ex.getCode()));
 
         return ResponseEntity.status(status)
                 .body(
                         ApiResponse.fail(
-                                ApiError.of(
-                                        status.name(),
-                                        status.getReasonPhrase(),
-                                        details),
+                                ApiError.of(status.name(), status.getReasonPhrase(), details),
                                 correlationId(request)));
     }
 

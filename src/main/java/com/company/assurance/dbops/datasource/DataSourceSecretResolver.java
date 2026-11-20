@@ -1,9 +1,8 @@
 package com.company.assurance.dbops.datasource;
 
+import com.company.assurance.dbops.datasource.exception.VaultSecretException;
 import java.time.Duration;
 import java.util.regex.Pattern;
-
-import com.company.assurance.dbops.datasource.exception.VaultSecretException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,26 +69,23 @@ public class DataSourceSecretResolver {
         } catch (RestClientResponseException ex) {
             int status = ex.getStatusCode().value();
 
-            String code = switch (status) {
-                case 403 -> "VAULT_ACCESS_DENIED";
-                case 404 -> "VAULT_SECRET_PATH_NOT_FOUND";
-                case 503 -> "VAULT_UNAVAILABLE";
-                default -> "VAULT_SECRET_RETRIEVAL_FAILED";
-            };
+            String code =
+                    switch (status) {
+                        case 403 -> "VAULT_ACCESS_DENIED";
+                        case 404 -> "VAULT_SECRET_PATH_NOT_FOUND";
+                        case 503 -> "VAULT_UNAVAILABLE";
+                        default -> "VAULT_SECRET_RETRIEVAL_FAILED";
+                    };
 
             log.error(
-                    "Vault secret retrieval failed: status={}, code={}, uri={}",
-                    status,
-                    code,
-                    uri);
+                    "Vault secret retrieval failed: status={}, code={}, uri={}", status, code, uri);
 
             throw new VaultSecretException(code, ex);
         } catch (RestClientException ex) {
             throw new VaultSecretException("VAULT_CONNECTION_FAILED", ex);
         }
-        JsonNode secret = response == null
-                ? MissingNode.getInstance()
-                : response.path("data").path("data");
+        JsonNode secret =
+                response == null ? MissingNode.getInstance() : response.path("data").path("data");
         if (!secret.isObject()) {
             throw new VaultSecretException("VAULT_INVALID_SECRET");
         }
@@ -97,16 +93,13 @@ public class DataSourceSecretResolver {
         String username = requiredField(secret, "username");
         String password = requiredField(secret, "password");
 
-        return new DatabaseCredentials(
-                username,
-                password.toCharArray());
+        return new DatabaseCredentials(username, password.toCharArray());
     }
 
     private String requiredField(JsonNode secret, String field) {
         JsonNode value = secret.path(field);
         if (!value.isString() || value.asString().isBlank()) {
-            throw new VaultSecretException(
-                    "VAULT_SECRET_FIELD_MISSING", field);
+            throw new VaultSecretException("VAULT_SECRET_FIELD_MISSING", field);
         }
 
         return value.asString();
