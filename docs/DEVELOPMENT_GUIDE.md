@@ -269,3 +269,15 @@ Before using a JDBC client in new code, answer two questions in the code review:
 2. Which exact `DataSource` is bound to the `JdbcClient` or `JdbcTemplate`?
 
 If the target cannot be identified explicitly, do not implement execution against it yet.
+
+### Mandatory target approval
+
+Before mapping or testing a target, administrators must configure its exact project
+code, environment, logical datasource code, engine and JDBC URL under
+`db-target-policy.approved-targets`, with `non-production-confirmed: true`.
+Preserve existing static approvals. Unlisted or mismatched targets return HTTP 403
+with `TARGET_NOT_APPROVED`, before Vault credentials are read. The connection tester
+also checks approval before configuring a JDBC connection. Policy changes require an
+application restart; remove approval and restart to revoke access and close old pools.
+Use administrator-controlled configuration only. Enforce trusted DNS, outbound network
+allowlists, database TLS and least-privilege database grants independently.

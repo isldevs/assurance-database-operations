@@ -3,6 +3,7 @@ package com.company.assurance.dbops.datasource.validation;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.company.assurance.dbops.datasource.DataSourceKey;
 import com.company.assurance.dbops.datasource.config.DataSourceRegistrationProperties;
 import com.company.assurance.dbops.datasource.config.DatabaseOperationsProperties;
 import com.company.assurance.dbops.datasource.config.PoolProperties;
@@ -69,6 +70,26 @@ public class TargetApprovalValidatorTests {
         assertThrows(
                 IllegalStateException.class,
                 () -> validator(registration(APPROVED_URL), List.of(target, target)));
+    }
+
+    @Test
+    void dynamicApprovalRequiresExactIdentityEngineAndUrl() {
+        var validator = new TargetApprovalValidator(
+                new TargetApprovalProperties(List.of(approval(Environment.UAT, true))),
+                new DatabaseOperationsProperties(3, List.of()));
+        var key = new DataSourceKey("DEMO", Environment.UAT, "CORE_DB");
+        assertDoesNotThrow(() -> validator.assertApproved(key, DatabaseEngine.POSTGRESQL, APPROVED_URL));
+        for (var rejected : List.of(
+                new DataSourceKey("OTHER", Environment.UAT, "CORE_DB"),
+                new DataSourceKey("DEMO", Environment.STAGE, "CORE_DB"),
+                new DataSourceKey("DEMO", Environment.UAT, "OTHER_DB"))) {
+            assertThrows(TargetNotApprovedException.class,
+                    () -> validator.assertApproved(rejected, DatabaseEngine.POSTGRESQL, APPROVED_URL));
+        }
+        assertThrows(TargetNotApprovedException.class,
+                () -> validator.assertApproved(key, DatabaseEngine.ORACLE, APPROVED_URL));
+        assertThrows(TargetNotApprovedException.class,
+                () -> validator.assertApproved(key, DatabaseEngine.POSTGRESQL, APPROVED_URL + "?ssl=false"));
     }
 
     private static TargetApprovalValidator validator(

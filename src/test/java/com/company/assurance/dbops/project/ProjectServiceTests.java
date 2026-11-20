@@ -4,10 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.company.assurance.dbops.datasource.DataSourceKey;
 import com.company.assurance.dbops.datasource.DataSourceSecretResolver;
 import com.company.assurance.dbops.datasource.DatabaseCredentials;
 import com.company.assurance.dbops.datasource.ProjectDataSourceSecretRefFactory;
@@ -15,6 +19,8 @@ import com.company.assurance.dbops.datasource.api.entity.DataSource;
 import com.company.assurance.dbops.datasource.api.repository.DataSourceRepository;
 import com.company.assurance.dbops.datasource.connection.DataSourceConnectionTester;
 import com.company.assurance.dbops.datasource.engine.DatabaseEngine;
+import com.company.assurance.dbops.datasource.validation.TargetApprovalValidator;
+import com.company.assurance.dbops.datasource.validation.TargetNotApprovedException;
 import com.company.assurance.dbops.environment.Environment;
 import com.company.assurance.dbops.project.data.request.CreateProjectRequest;
 import com.company.assurance.dbops.project.data.request.MapDataSourceRequest;
@@ -53,6 +59,8 @@ class ProjectServiceTests {
     @Mock private DataSourceConnectionTester connectionTester;
     @Mock private CustomSecurityContextHolder customSecurityContextHolder;
 
+    @Mock private TargetApprovalValidator targetApprovalValidator;
+
     private ProjectService projectService;
 
     @BeforeEach
@@ -66,7 +74,8 @@ class ProjectServiceTests {
                         secretRefFactory,
                         connectionTester,
                         customSecurityContextHolder,
-                        Clock.fixed(NOW, ZoneOffset.UTC));
+                        Clock.fixed(NOW, ZoneOffset.UTC),
+                        targetApprovalValidator);
     }
 
     @Test
@@ -269,12 +278,14 @@ class ProjectServiceTests {
                         "source-1",
                         "CORE_DB",
                         DatabaseEngine.POSTGRESQL);
+        stubConnectionProject();
         char[] password = "secret".toCharArray();
         when(projectRepository.findDataSource("project-1", "mapping-1"))
                 .thenReturn(Optional.of(mapping));
         when(secretResolver.resolve("SECRET_CORE_DB"))
                 .thenReturn(new DatabaseCredentials("app_user", password));
         when(connectionTester.test(
+                        new DataSourceKey("WING_CORE", Environment.UAT, "CORE_DB"),
                         DatabaseEngine.POSTGRESQL, mapping.jdbcUrl(), "app_user", password))
                 .thenReturn(true);
 
@@ -283,6 +294,48 @@ class ProjectServiceTests {
         assertTrue(response.connected());
         assertEquals("mapping-1", response.projectDataSourceId());
         assertTrue(java.util.Arrays.equals(new char[password.length], password));
+    }
+
+    @Test
+    void rejectsUnapprovedConnectionBeforeVaultAccess() {
+        stubConnectionProject();
+        var mapping = dataSource("mapping-1", "env-uat", Environment.UAT,
+                "source-1", "CORE_DB", DatabaseEngine.POSTGRESQL);
+        when(projectRepository.findDataSource("project-1", "mapping-1"))
+                .thenReturn(Optional.of(mapping));
+        doThrow(new TargetNotApprovedException())
+                .when(targetApprovalValidator)
+                .assertApproved(new DataSourceKey("WING_CORE", Environment.UAT, "CORE_DB"),
+                        mapping.engine(), mapping.jdbcUrl());
+
+        assertThrows(TargetNotApprovedException.class,
+                () -> projectService.testDataSourceConnection("project-1", "mapping-1"));
+        verifyNoInteractions(secretResolver, connectionTester);
+    }
+
+    @Test
+    void rejectsUnapprovedMappingBeforePersistence() {
+        stubConnectionProject();
+        when(dataSourceRepository.findByCode("CORE_DB"))
+                .thenReturn(Optional.of(dataSourceDefinition("source-1", "CORE_DB")));
+        String url = "jdbc:postgresql://127.0.0.1:5433/unapproved";
+        doThrow(new TargetNotApprovedException())
+                .when(targetApprovalValidator)
+                .assertApproved(new DataSourceKey("WING_CORE", Environment.UAT, "CORE_DB"),
+                        DatabaseEngine.POSTGRESQL, url);
+
+        assertThrows(TargetNotApprovedException.class,
+                () -> projectService.mapDataSource("project-1",
+                        new MapDataSourceRequest(Environment.UAT, "CORE_DB", "public", url, true)));
+        verify(projectRepository, never()).insertDataSource(any(ProjectDataSourceMapping.class));
+        verifyNoInteractions(secretResolver, connectionTester, secretRefFactory);
+    }
+
+    private void stubConnectionProject() {
+        when(projectRepository.findById("project-1"))
+                .thenReturn(Optional.of(new Project("project-1", "WING_CORE", "Core Banking",
+                        "Core Team", ProjectStatus.ACTIVE, PromotionMode.SEQUENTIAL,
+                        "test-user", NOW, NOW)));
     }
 
     private static ProjectDataSourceMapping dataSource(
