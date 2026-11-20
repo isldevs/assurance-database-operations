@@ -17,7 +17,7 @@ anonymous-user: test-user
 vault:
   address: http://127.0.0.1:8200
   token: test-vault-token
-  secret-path: projects/{PROJECT_CODE}/environments/{ENVIRONMENT}/data-sources/{DATA_SOURCE_CODE}
+  secret-path: projects/{PROJECT_CODE}/environments/{ENVIRONMENT}/data-sources/{DATA_SOURCE}
 
 management:
   endpoints:

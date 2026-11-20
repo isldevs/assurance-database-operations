@@ -29,7 +29,7 @@ public class DataSourceRepository {
         return jdbcClient
                 .sql(
                         """
-                        SELECT id, data_source_code, data_source_name, engine, description,
+                        SELECT id, DATA_SOURCE, data_source_name, engine, description,
                                enabled, created_by, created_at, updated_at
                         FROM db_data_source
                         WHERE id = :id
@@ -43,10 +43,10 @@ public class DataSourceRepository {
         return jdbcClient
                 .sql(
                         """
-                        SELECT id, data_source_code, data_source_name, engine, description,
+                        SELECT id, DATA_SOURCE, data_source_name, engine, description,
                                enabled, created_by, created_at, updated_at
                         FROM db_data_source
-                        WHERE data_source_code = :dataSourceCode
+                        WHERE DATA_SOURCE = :dataSourceCode
                         """)
                 .param("dataSourceCode", dataSourceCode)
                 .query((rs, rowNum) -> map(rs))
@@ -57,10 +57,10 @@ public class DataSourceRepository {
         return jdbcClient
                 .sql(
                         """
-                        SELECT id, data_source_code, data_source_name, engine, description,
+                        SELECT id, DATA_SOURCE, data_source_name, engine, description,
                                enabled, created_by, created_at, updated_at
                         FROM db_data_source
-                        ORDER BY data_source_code
+                        ORDER BY DATA_SOURCE
                         """)
                 .query((rs, rowNum) -> map(rs))
                 .list();
@@ -72,7 +72,7 @@ public class DataSourceRepository {
                     .sql(
                             """
                             INSERT INTO db_data_source
-                                (id, data_source_code, data_source_name, engine, description,
+                                (id, DATA_SOURCE, data_source_name, engine, description,
                                  enabled, created_by, created_at, updated_at)
                             VALUES
                                 (:id, :dataSourceCode, :dataSourceName, :engine, :description,
@@ -96,7 +96,7 @@ public class DataSourceRepository {
     private static DataSource map(java.sql.ResultSet rs) throws java.sql.SQLException {
         return new DataSource(
                 rs.getString("id"),
-                rs.getString("data_source_code"),
+                rs.getString("DATA_SOURCE"),
                 rs.getString("data_source_name"),
                 DatabaseEngine.valueOf(rs.getString("engine")),
                 rs.getString("description"),

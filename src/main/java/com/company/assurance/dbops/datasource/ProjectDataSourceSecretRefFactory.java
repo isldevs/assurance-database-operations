@@ -19,7 +19,7 @@ public class ProjectDataSourceSecretRefFactory {
     private static final Pattern TEMPLATE_PLACEHOLDER = Pattern.compile("\\{([A-Z_]+)}");
     private static final String PROJECT_CODE = "PROJECT_CODE";
     private static final String ENVIRONMENT = "ENVIRONMENT";
-    private static final String DATA_SOURCE = "DATA_SOURCE_CODE";
+    private static final String DATA_SOURCE = "DATA_SOURCE";
     private static final Set<String> REQUIRED_PLACEHOLDERS =
             Set.of(PROJECT_CODE, ENVIRONMENT, DATA_SOURCE);
 
@@ -35,7 +35,7 @@ public class ProjectDataSourceSecretRefFactory {
                 Map.of(
                         PROJECT_CODE, normalizeSegment(projectCode, PROJECT_CODE),
                         ENVIRONMENT, normalizeSegment(environment, ENVIRONMENT),
-                        DATA_SOURCE, normalizeDataSourceCode(dataSourceCode));
+                        DATA_SOURCE, normalizeSegment(dataSourceCode, DATA_SOURCE));
         Matcher matcher = TEMPLATE_PLACEHOLDER.matcher(pathTemplate);
         StringBuilder path = new StringBuilder(pathTemplate.length());
         while (matcher.find()) {

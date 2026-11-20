@@ -183,17 +183,30 @@ tasks.named('processResources') {
 
 spotless {
     java {
-        target 'src/**/*.java'
-        googleJavaFormat(libs.versions.google.java.format.get()).aosp()
+        eclipse().configFile(file('src/main/resources/java-code-style.xml'))
+        target 'src/main/java/**/*.java'
+        licenseHeaderFile 'LICENSE', '(package|import|public|class|interface|enum)'
+        targetExclude([
+                '**/build/**', '**/aotSources/**', '**/generated/**', '**/target/**', '**/out/**', '**/bin/**',
+                '**/aot*/**', '**/*__Generated.java', '**/org/springframework/**', '**/*.properties',
+                '**/*.yml', '**/*.yaml', '**/*.json', '**/*.xml', '**/*.sql', '**/*.p12', '**/*.jks',
+                '**/*.keystore', '**/*.dev', '**/*.prod', '**/*.sh', '**/*.bat', '**/*.jar',
+                '**/*.war', '**/*.md', '**/*.txt', '**/*.html', '**/*.private', '**/*.public',
+                '**/gradlew*', '**/gradle/wrapper/**', '**/*Tests.java', '**/*Test.java',
+                '**/.dev', '**/.prod', '**/.env', '**/aot*/**', '**/*__Generated.java', '**/org/springframework/**'
+        ])
         removeUnusedImports()
         trimTrailingWhitespace()
         endWithNewline()
     }
+}
 
-    format('misc') {
-        target '*.gradle', '*.md', '.gitignore'
+tasks.named("spotlessApply") {
+    group = 'formatting'
+    description = 'Apply code formatting'
+}
 
-        trimTrailingWhitespace()
-        endWithNewline()
-    }
+tasks.named("spotlessCheck") {
+    group = 'verification'
+    description = 'Check code formatting and Apply LICENSE Header'
 }

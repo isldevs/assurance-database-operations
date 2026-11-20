@@ -53,10 +53,10 @@ CREATE TABLE db_environment
 );
 
 INSERT INTO db_environment (code, name, description, sort_order, is_production, enabled)
-VALUES ('UAT', 'User Acceptance Testing', 'User acceptance testing', 1, FALSE, TRUE),
-       ('STAGE', 'Staging', 'Staging environment', 2, FALSE, TRUE),
-       ('STAGE2', 'Secondary Staging', 'Secondary staging environment', 3, FALSE, TRUE),
-       ('STAGE3', 'Additional Staging', 'Additional staging environment', 4, FALSE, TRUE);
+VALUES ('UAT', 'UAT', 'User acceptance testing', 1, FALSE, TRUE),
+       ('STAGE', 'Stage', 'Staging environment', 2, FALSE, TRUE),
+       ('STAGE2', 'Stage2', 'Secondary staging environment', 3, FALSE, TRUE),
+       ('STAGE3', 'Stage3', 'Additional staging environment', 4, FALSE, TRUE);
 
 CREATE TABLE db_project_environment
 (
@@ -85,7 +85,7 @@ CREATE TABLE db_project_environment
 CREATE TABLE db_data_source
 (
     id               VARCHAR(36)  NOT NULL,
-    data_source_code VARCHAR(64)  NOT NULL,
+    DATA_SOURCE VARCHAR(64)  NOT NULL,
     data_source_name VARCHAR(128) NOT NULL,
     engine           VARCHAR(16)  NOT NULL,
     description      VARCHAR(500),
@@ -95,7 +95,7 @@ CREATE TABLE db_data_source
     updated_at       TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     row_version      INTEGER      NOT NULL DEFAULT 0,
     CONSTRAINT pk_db_data_source PRIMARY KEY (id),
-    CONSTRAINT uq_db_data_source_code UNIQUE (data_source_code),
+    CONSTRAINT uq_db_data_source_code UNIQUE (DATA_SOURCE),
     CONSTRAINT uq_db_data_source_id_engine UNIQUE (id, engine),
     CONSTRAINT ck_db_data_source_engine CHECK (engine IN ('ORACLE', 'POSTGRESQL')),
     CONSTRAINT ck_db_data_source_version CHECK (row_version >= 0)
@@ -108,7 +108,6 @@ CREATE TABLE db_project_env_datasource
     data_source_id         VARCHAR(36)  NOT NULL,
     schema_name            VARCHAR(128),
     jdbc_url               VARCHAR(512) NOT NULL,
-    username               VARCHAR(128) NOT NULL,
     secret_ref             VARCHAR(256) NOT NULL,
     enabled                BOOLEAN      NOT NULL DEFAULT TRUE,
     connection_timeout_ms  INTEGER      NOT NULL DEFAULT 3000,

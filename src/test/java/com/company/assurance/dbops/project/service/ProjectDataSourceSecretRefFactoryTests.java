@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 class ProjectDataSourceSecretRefFactoryTests {
 
     private static final String TEMPLATE =
-            "projects/{PROJECT_CODE}/environments/{ENVIRONMENT}/data-sources/{DATA_SOURCE_CODE}";
+            "projects/{PROJECT_CODE}/environments/{ENVIRONMENT}/data-sources/{DATA_SOURCE}";
 
     @Test
     void createsNormalizedSecretRefForProjectDatasourceMappingOnly() {
@@ -29,7 +29,7 @@ class ProjectDataSourceSecretRefFactoryTests {
                 IllegalArgumentException.class,
                 () ->
                         new ProjectDataSourceSecretRefFactory(
-                                "projects/{PROJECT_CODE}/../{ENVIRONMENT}/{DATA_SOURCE_CODE}"));
+                                "projects/{PROJECT_CODE}/../{ENVIRONMENT}/{DATA_SOURCE}"));
         ProjectDataSourceSecretRefFactory factory = new ProjectDataSourceSecretRefFactory(TEMPLATE);
         assertThrows(
                 IllegalArgumentException.class,

@@ -72,7 +72,7 @@ public class DataSourceSecretResolver {
             String code =
                     switch (status) {
                         case 403 -> "VAULT_ACCESS_DENIED";
-                        case 404 -> "VAULT_SECRET_PATH_NOT_FOUND";
+                        case 404 -> "VAULT_CREDENTIAL_PATH_NOT_FOUND";
                         case 503 -> "VAULT_UNAVAILABLE";
                         default -> "VAULT_SECRET_RETRIEVAL_FAILED";
                     };

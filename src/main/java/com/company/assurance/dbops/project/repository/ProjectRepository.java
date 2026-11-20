@@ -209,7 +209,7 @@ public class ProjectRepository {
                                ds.project_environment_id,
                                pe.environment_code,
                                source.id AS data_source_id,
-                               source.data_source_code,
+                               source.DATA_SOURCE,
                                source.engine,
                                ds.schema_name,
                                ds.jdbc_url,
@@ -222,7 +222,7 @@ public class ProjectRepository {
                         INNER JOIN db_environment env ON env.code = pe.environment_code
                         INNER JOIN db_data_source source ON source.id = ds.data_source_id
                         WHERE pe.project_id = :projectId
-                        ORDER BY env.sort_order, source.data_source_code
+                        ORDER BY env.sort_order, source.DATA_SOURCE
                         """)
                 .param("projectId", projectId)
                 .query((rs, rowNum) -> mapDataSource(rs))
@@ -239,7 +239,7 @@ public class ProjectRepository {
                                ds.project_environment_id,
                                pe.environment_code,
                                source.id AS data_source_id,
-                               source.data_source_code,
+                               source.DATA_SOURCE,
                                source.engine,
                                ds.schema_name,
                                ds.jdbc_url,
@@ -311,7 +311,7 @@ public class ProjectRepository {
                 rs.getString("project_environment_id"),
                 Environment.valueOf(rs.getString("environment_code")),
                 rs.getString("data_source_id"),
-                rs.getString("data_source_code"),
+                rs.getString("DATA_SOURCE"),
                 DatabaseEngine.valueOf(rs.getString("engine")),
                 rs.getString("schema_name"),
                 rs.getString("jdbc_url"),

@@ -106,7 +106,7 @@ in section 5.
 | `db_project_member` | `id`, `project_id`, external `user_id`, `role_code`, `enabled`, `created_at`, `created_by` | FK project; unique `(project_id, user_id)`; roles are project-scoped, not a local identity store |
 | `db_environment` | `code`, `name`, `description`, `sort_order`, `is_production`, `enabled` | PK code; seed UAT/STAGE/STAGE2/STAGE3; production targets excluded by policy |
 | `db_project_environment` | `id`, `project_id`, `environment_code`, `enabled`, `promotion_order`, optional approval-policy reference, timestamps | FKs project/environment; unique `(project_id, environment_code)`; unique `(project_id, promotion_order)` when order is set |
-| `db_data_source` | `id`, `data_source_code`, `data_source_name`, `engine`, description, enabled, timestamps, `row_version` | PK id; unique logical code; engine check ORACLE/POSTGRESQL |
+| `db_data_source` | `id`, `DATA_SOURCE`, `data_source_name`, `engine`, description, enabled, timestamps, `row_version` | PK id; unique logical code; engine check ORACLE/POSTGRESQL |
 | `db_project_env_datasource` | `id`, `project_environment_id`, `data_source_id`, `schema_name`, `jdbc_url`, `secret_ref`, `enabled`, timeout/pool policy reference, timestamps, `row_version` | FKs project environment and logical data source; unique `(project_environment_id, data_source_id)`; endpoint engine must match logical source |
 
 `db_data_source` is a logical source definition; it must not contain a single universal
@@ -340,7 +340,7 @@ the migration both from an empty database and from the actual deployed migration
 
 The data-source code may be global if it represents a reusable logical database role
 (for example, `CORE_DB`). If separate teams need different logical meanings for the
-same code, add a namespace/owner and use unique `(namespace, data_source_code)` instead.
+same code, add a namespace/owner and use unique `(namespace, DATA_SOURCE)` instead.
 Do not make code unique by environment unless the domain intends separate logical source
 identities.
 

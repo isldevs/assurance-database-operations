@@ -13,7 +13,7 @@ spring:
 vault:
   address: ${VAULT_ADDRESS}
   token: ${VAULT_TOKEN}
-  kv-mount: secret
+  kv-mount: kv
   secret-path: ${VAULT_SECRET_PATH}
 
 db-operations:
