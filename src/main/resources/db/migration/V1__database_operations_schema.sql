@@ -53,10 +53,10 @@ CREATE TABLE db_environment
 );
 
 INSERT INTO db_environment (code, name, description, sort_order, is_production, enabled)
-VALUES ('UAT', 'User Acceptance Testing', 'User acceptance testing', 1, FALSE, TRUE),
-       ('STAGE', 'Staging', 'Staging environment', 2, FALSE, TRUE),
-       ('STAGE2', 'Secondary Staging', 'Secondary staging environment', 3, FALSE, TRUE),
-       ('STAGE3', 'Additional Staging', 'Additional staging environment', 4, FALSE, TRUE);
+VALUES ('UAT', 'UAT', 'User acceptance testing', 1, FALSE, TRUE),
+       ('STAGE', 'Stage', 'Staging environment', 2, FALSE, TRUE),
+       ('STAGE2', 'Stage2', 'Secondary staging environment', 3, FALSE, TRUE),
+       ('STAGE3', 'Stage3', 'Additional staging environment', 4, FALSE, TRUE);
 
 CREATE TABLE db_project_environment
 (
