@@ -19,7 +19,7 @@ public class ProjectDataSourceSecretRefFactory {
     private static final Pattern TEMPLATE_PLACEHOLDER = Pattern.compile("\\{([A-Z_]+)}");
     private static final String PROJECT_CODE = "PROJECT_CODE";
     private static final String ENVIRONMENT = "ENVIRONMENT";
-    private static final String DATA_SOURCE = "DATA_SOURCE";
+    private static final String DATA_SOURCE = "DATA_SOURCE_CODE";
     private static final Set<String> REQUIRED_PLACEHOLDERS =
             Set.of(PROJECT_CODE, ENVIRONMENT, DATA_SOURCE);
 

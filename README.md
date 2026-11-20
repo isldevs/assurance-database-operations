@@ -24,18 +24,20 @@ in Docker Compose.
    $env:VAULT_TOKEN = "<your-local-vault-token>"
    .\gradlew.bat bootRun --args="--spring.profiles.active=local"
    ```
-   Compose runs Vault in development mode for local use only. Its data is in-memory
-   and is lost when the Vault container restarts. Configure the database credentials in
-   Vault before testing a project/environment datasource:
+   Compose runs Vault with file-backed storage in the `vault-data` Docker volume.
+   Initialize and unseal Vault on first use, then configure the database credentials
+   before testing a project/environment datasource:
 
    1. Open `http://127.0.0.1:8200` and sign in using the value of
       `VAULT_TOKEN` from `.env`.
    2. Open the `secret/` KV v2 engine and create a secret at
-      `projects/WING_CORE/environments/UAT/data-sources/CORE_DB`.
+      `projects/WING_CORE/environments/UAT/data-sources/WING_CORE`.
    3. Add `username` and `password` fields containing the Oracle login and its password,
       then save. Do not put either credential in the API request or repository.
-   4. Set the request's `secretRef` to the relative path
-      `projects/WING_CORE/environments/UAT/data-sources/CORE_DB` (without `secret/`).
+   4. The mapping endpoint generates this `secretRef` from
+      `VAULT_SECRET_PATH`, project code, environment, and datasource code. For
+      `CORE_DB`, the current local mapping convention generates the `WING_CORE`
+      suffix shown above.
 
    Create the matching logical datasource first with `POST /api/v1/data-sources`:
    ```json
@@ -53,13 +55,12 @@ in Docker Compose.
      "dataSourceCode": "CORE_DB",
      "schemaName": "CORE_APP",
      "jdbcUrl": "jdbc:oracle:thin:@//127.0.0.1:1523/FREEPDB1",
-     "secretRef": "projects/WING_CORE/environments/UAT/data-sources/CORE_DB",
      "enabled": true
    }
    ```
    Replace `CORE_APP` and the URL with the actual schema and Oracle service used by
-   your target. `secretRef` must match the Vault path; Vault's `username` and `password`
-   fields supply the target login credentials.
+   your target. The generated `secretRef` selects the Vault secret; its `username`
+   and `password` fields supply the target login credentials.
 3. Demo the hierarchy:
    ```powershell
    # Create project
@@ -70,7 +71,7 @@ in Docker Compose.
    # {"dataSourceCode":"CORE_DB","dataSourceName":"Core Database","engine":"POSTGRESQL"}
    #
    # Map environments, then data sources (use the returned projectId).
-   # Mapping request contains environment, dataSourceCode, jdbcUrl, secretRef,
+   # Mapping request contains environment, dataSourceCode, jdbcUrl,
    # and optional schemaName/enabled. Credentials come from Vault; engine comes from
    # the logical definition.
    # POST /api/v1/projects/{projectId}/environments

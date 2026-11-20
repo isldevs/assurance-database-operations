@@ -6,6 +6,7 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
+import com.company.assurance.dbops.datasource.exception.VaultSecretException;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
@@ -82,7 +83,11 @@ class DataSourceSecretResolverTests {
                                 """,
                                 MediaType.APPLICATION_JSON));
 
-        assertThrows(IllegalStateException.class, () -> resolver.resolve("project/env/source"));
+        VaultSecretException exception =
+                assertThrows(
+                        VaultSecretException.class, () -> resolver.resolve("project/env/source"));
+        assertEquals("VAULT_SECRET_FIELD_MISSING", exception.getCode());
+        assertEquals("username", exception.getArguments()[0]);
         server.verify();
     }
 
@@ -100,7 +105,11 @@ class DataSourceSecretResolverTests {
                                 """,
                                 MediaType.APPLICATION_JSON));
 
-        assertThrows(IllegalStateException.class, () -> resolver.resolve("project/env/source"));
+        VaultSecretException exception =
+                assertThrows(
+                        VaultSecretException.class, () -> resolver.resolve("project/env/source"));
+        assertEquals("VAULT_SECRET_FIELD_MISSING", exception.getCode());
+        assertEquals("password", exception.getArguments()[0]);
         server.verify();
     }
 }

@@ -125,19 +125,19 @@ continue to be distinguished from managed execution pools.
 ### Vault secret references
 
 `secretRef` is a relative KV v2 secret path, not a credential and not a mount name.
-For example, `projects/WING_CORE/environments/UAT/data-sources/CORE_DB` resolves as
-`GET /v1/secret/data/projects/WING_CORE/environments/UAT/data-sources/CORE_DB`; the
-secret document must contain `username` and `password` fields. The `secret` KV v2 engine is already
-enabled by Vault's local dev server. In Vault UI, open `secret/`, create a secret at
-the relative path, add a `username` field for the database login and a `password` field
-for its password, and save it.
-Use that same relative path in the mapping request's `secretRef`. The API does not
-accept or return the target username or password.
+The project datasource-mapping endpoint generates it from `vault.secret-path`, project
+code, environment, and datasource code; clients do not provide `secretRef`. For example,
+the current path template and `CORE_DB` mapping for `WING_CORE/UAT` generate
+`projects/WING_CORE/environments/UAT/data-sources/WING_CORE`, requested through
+`GET /v1/secret/data/projects/WING_CORE/environments/UAT/data-sources/WING_CORE`.
+The Vault secret must contain `username` and `password` fields. In Vault UI, open
+`secret/`, create a secret at the generated relative path, add the database login
+fields, and save. The API does not accept or return the target username or password.
 
-Docker Compose exposes local Vault only on loopback at `127.0.0.1:8200`. Its dev server
-uses the root token in `VAULT_TOKEN`, stores data only in memory, and must never
-be used for shared or production environments. Recreate local secrets after restarting
-Vault. For deployed environments, use Vault with TLS and persistent/HA storage, an
+Docker Compose exposes local Vault only on loopback at `127.0.0.1:8200` and stores data
+in the `vault-data` Docker volume; initialize and unseal it on first use. The local
+`VAULT_TOKEN` is a root token and must never be used for shared or production environments.
+For deployed environments, use Vault with TLS and persistent/HA storage, an
 application workload identity (not a root token), a narrowly scoped policy granting
 read access only to the required KV paths, and an enabled Vault audit device. Inject
 Vault address and token through deployment configuration, never source control.
