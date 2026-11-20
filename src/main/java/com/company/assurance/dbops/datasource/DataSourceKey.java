@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
  * @param dataSourceCode
  */
 public record DataSourceKey(String projectCode, Environment environment, String dataSourceCode) {
+
     private static final Pattern CODE_PATTERN = Pattern.compile("[A-Z][A-Z0-9_]{0,63}");
 
     public DataSourceKey {

@@ -128,8 +128,8 @@ continue to be distinguished from managed execution pools.
 The project datasource-mapping endpoint generates it from `vault.secret-path`, project
 code, environment, and datasource code; clients do not provide `secretRef`. For example,
 the current path template and `CORE_DB` mapping for `WING_CORE/UAT` generate
-`projects/WING_CORE/environments/UAT/data-sources/WING_CORE`, requested through
-`GET /v1/secret/data/projects/WING_CORE/environments/UAT/data-sources/WING_CORE`.
+`projects/WING_CORE/environments/UAT/data-sources/CORE_DB`, requested through
+`GET /v1/secret/data/projects/WING_CORE/environments/UAT/data-sources/CORE_DB`.
 The Vault secret must contain `username` and `password` fields. In Vault UI, open
 `secret/`, create a secret at the generated relative path, add the database login
 fields, and save. The API does not accept or return the target username or password.

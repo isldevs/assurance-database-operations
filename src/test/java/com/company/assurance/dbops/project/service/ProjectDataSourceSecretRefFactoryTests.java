@@ -16,10 +16,10 @@ class ProjectDataSourceSecretRefFactoryTests {
         ProjectDataSourceSecretRefFactory factory = new ProjectDataSourceSecretRefFactory(TEMPLATE);
 
         assertEquals(
-                "projects/WING_CORE/environments/UAT/data-sources/WING_CORE",
+                "projects/WING_CORE/environments/UAT/data-sources/CORE_DB",
                 factory.forMapping("wing_core", "uat", "CORE_DB"));
         assertEquals(
-                "projects/ORACLE/environments/UAT/data-sources/WING_ORACLE",
+                "projects/ORACLE/environments/UAT/data-sources/ORACLE_DB",
                 factory.forMapping("oracle", "uat", "ORACLE_DB"));
     }
 

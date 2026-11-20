@@ -31,13 +31,12 @@ in Docker Compose.
    1. Open `http://127.0.0.1:8200` and sign in using the value of
       `VAULT_TOKEN` from `.env`.
    2. Open the `secret/` KV v2 engine and create a secret at
-      `projects/WING_CORE/environments/UAT/data-sources/WING_CORE`.
+      `projects/WING_CORE/environments/UAT/data-sources/CORE_DB`.
    3. Add `username` and `password` fields containing the Oracle login and its password,
       then save. Do not put either credential in the API request or repository.
    4. The mapping endpoint generates this `secretRef` from
       `VAULT_SECRET_PATH`, project code, environment, and datasource code. For
-      `CORE_DB`, the current local mapping convention generates the `WING_CORE`
-      suffix shown above.
+      `CORE_DB`, the mapping uses the `CORE_DB` suffix shown above.
 
    Create the matching logical datasource first with `POST /api/v1/data-sources`:
    ```json

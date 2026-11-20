@@ -33,9 +33,12 @@ public class ProjectDataSourceSecretRefFactory {
     public String forMapping(String projectCode, String environment, String dataSourceCode) {
         Map<String, String> parameters =
                 Map.of(
-                        PROJECT_CODE, normalizeSegment(projectCode, PROJECT_CODE),
-                        ENVIRONMENT, normalizeSegment(environment, ENVIRONMENT),
-                        DATA_SOURCE, normalizeSegment(dataSourceCode, DATA_SOURCE));
+                        PROJECT_CODE,
+                        normalizeSegment(projectCode, PROJECT_CODE),
+                        ENVIRONMENT,
+                        normalizeSegment(environment, ENVIRONMENT),
+                        DATA_SOURCE,
+                        normalizeSegment(dataSourceCode, DATA_SOURCE));
         Matcher matcher = TEMPLATE_PLACEHOLDER.matcher(pathTemplate);
         StringBuilder path = new StringBuilder(pathTemplate.length());
         while (matcher.find()) {
@@ -56,23 +59,6 @@ public class ProjectDataSourceSecretRefFactory {
         String normalized = value.strip().toUpperCase(Locale.ROOT);
         if (!SAFE_SEGMENT.matcher(normalized).matches()) {
             throw new IllegalArgumentException("Invalid " + fieldName + " for Vault secret path");
-        }
-        return normalized;
-    }
-
-    private static String normalizeDataSourceCode(String dataSourceCode) {
-        String normalized = normalizeSegment(dataSourceCode, DATA_SOURCE);
-        if (normalized.endsWith("_DB")) {
-            normalized = normalized.substring(0, normalized.length() - "_DB".length());
-        }
-        if (normalized.isBlank()) {
-            throw new IllegalArgumentException("Invalid " + DATA_SOURCE + " for Vault secret path");
-        }
-        if (!normalized.startsWith("WING_")) {
-            normalized = "WING_" + normalized;
-        }
-        if (!SAFE_SEGMENT.matcher(normalized).matches()) {
-            throw new IllegalArgumentException("Invalid " + DATA_SOURCE + " for Vault secret path");
         }
         return normalized;
     }

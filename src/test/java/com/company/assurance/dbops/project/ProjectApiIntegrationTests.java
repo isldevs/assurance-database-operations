@@ -94,7 +94,7 @@ class ProjectApiIntegrationTests {
                         .readTree(created.getResponse().getContentAsString())
                         .path("data")
                         .path("projectId")
-                        .asText();
+                        .asString();
 
         mockMvc.perform(
                         post("/api/v1/projects/{projectId}/environments", projectId)
@@ -201,9 +201,9 @@ class ProjectApiIntegrationTests {
                         .path("data")
                         .path("environments");
 
-        assertEquals("UAT", environments.get(0).path("environment").asText());
+        assertEquals("UAT", environments.get(0).path("environment").asString());
         assertEquals(2, environments.get(0).path("dataSources").size());
-        assertEquals("STAGE", environments.get(1).path("environment").asText());
+        assertEquals("STAGE", environments.get(1).path("environment").asString());
         assertEquals(1, environments.get(1).path("dataSources").size());
         assertTrue(environments.toString().contains("PERSONA_DB"));
         assertTrue(environments.toString().contains("CORE_DB"));

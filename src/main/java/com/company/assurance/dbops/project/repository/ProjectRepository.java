@@ -37,14 +37,14 @@ public class ProjectRepository {
         return jdbcClient
                 .sql(
                         """
-                        SELECT id, project_code, project_name, owner_name, status, promotion_mode,
-                               created_by, created_at, updated_at
-                        FROM db_project
-                        WHERE id = :id
-                        """)
+                              SELECT id, project_code, project_name, owner_name, status, promotion_mode,
+                                     created_by, created_at, updated_at
+                              FROM db_project
+                              WHERE id = :id
+                              """)
                 .param("id", projectId)
                 .query(
-                        (rs, rowNum) ->
+                        (rs, ignored) ->
                                 new Project(
                                         rs.getString("id"),
                                         rs.getString("project_code"),
@@ -62,14 +62,14 @@ public class ProjectRepository {
         return jdbcClient
                 .sql(
                         """
-                        SELECT id, project_code, project_name, owner_name, status, promotion_mode,
-                               created_by, created_at, updated_at
-                        FROM db_project
-                        WHERE project_code = :projectCode
-                        """)
+                              SELECT id, project_code, project_name, owner_name, status, promotion_mode,
+                                     created_by, created_at, updated_at
+                              FROM db_project
+                              WHERE project_code = :projectCode
+                              """)
                 .param("projectCode", projectCode)
                 .query(
-                        (rs, rowNum) ->
+                        (rs, ignored) ->
                                 new Project(
                                         rs.getString("id"),
                                         rs.getString("project_code"),
@@ -87,13 +87,13 @@ public class ProjectRepository {
         return jdbcClient
                 .sql(
                         """
-                        SELECT id, project_code, project_name, owner_name, status, promotion_mode,
-                               created_by, created_at, updated_at
-                        FROM db_project
-                        ORDER BY project_code
-                        """)
+                              SELECT id, project_code, project_name, owner_name, status, promotion_mode,
+                                     created_by, created_at, updated_at
+                              FROM db_project
+                              ORDER BY project_code
+                              """)
                 .query(
-                        (rs, rowNum) ->
+                        (rs, ignored) ->
                                 new Project(
                                         rs.getString("id"),
                                         rs.getString("project_code"),
@@ -112,13 +112,13 @@ public class ProjectRepository {
             jdbcClient
                     .sql(
                             """
-                            INSERT INTO db_project
-                                (id, project_code, project_name, owner_name, status, promotion_mode,
-                                 created_by, created_at, updated_at)
-                            VALUES
-                                (:id, :projectCode, :projectName, :ownerName, :status, :promotionMode,
-                                 :createdBy, :createdAt, :updatedAt)
-                            """)
+                           INSERT INTO db_project
+                               (id, project_code, project_name, owner_name, status, promotion_mode,
+                                created_by, created_at, updated_at)
+                           VALUES
+                               (:id, :projectCode, :projectName, :ownerName, :status, :promotionMode,
+                                :createdBy, :createdAt, :updatedAt)
+                           """)
                     .param("id", project.id())
                     .param("projectCode", project.projectCode())
                     .param("projectName", project.projectName())
@@ -139,14 +139,14 @@ public class ProjectRepository {
         return jdbcClient
                 .sql(
                         """
-                        SELECT id, project_id, environment_code, enabled, created_at
-                        FROM db_project_environment
-                        WHERE project_id = :projectId AND environment_code = :environment
-                        """)
+                              SELECT id, project_id, environment_code, enabled, created_at
+                              FROM db_project_environment
+                              WHERE project_id = :projectId AND environment_code = :environment
+                              """)
                 .param("projectId", projectId)
                 .param("environment", environment.name())
                 .query(
-                        (rs, rowNum) ->
+                        (rs, ignored) ->
                                 new ProjectEnvironmentMapping(
                                         rs.getString("id"),
                                         rs.getString("project_id"),
@@ -160,15 +160,15 @@ public class ProjectRepository {
         return jdbcClient
                 .sql(
                         """
-                        SELECT pe.id, pe.project_id, pe.environment_code, pe.enabled, pe.created_at
-                        FROM db_project_environment pe
-                        INNER JOIN db_environment e ON e.code = pe.environment_code
-                        WHERE pe.project_id = :projectId
-                        ORDER BY e.sort_order
-                        """)
+                              SELECT pe.id, pe.project_id, pe.environment_code, pe.enabled, pe.created_at
+                              FROM db_project_environment pe
+                              INNER JOIN db_environment e ON e.code = pe.environment_code
+                              WHERE pe.project_id = :projectId
+                              ORDER BY e.sort_order
+                              """)
                 .param("projectId", projectId)
                 .query(
-                        (rs, rowNum) ->
+                        (rs, ignored) ->
                                 new ProjectEnvironmentMapping(
                                         rs.getString("id"),
                                         rs.getString("project_id"),
@@ -183,11 +183,11 @@ public class ProjectRepository {
             jdbcClient
                     .sql(
                             """
-                            INSERT INTO db_project_environment
-                                (id, project_id, environment_code, enabled, created_at)
-                            VALUES
-                                (:id, :projectId, :environment, :enabled, :createdAt)
-                            """)
+                           INSERT INTO db_project_environment
+                               (id, project_id, environment_code, enabled, created_at)
+                           VALUES
+                               (:id, :projectId, :environment, :enabled, :createdAt)
+                           """)
                     .param("id", mapping.id())
                     .param("projectId", mapping.projectId())
                     .param("environment", mapping.environment().name())
@@ -204,28 +204,28 @@ public class ProjectRepository {
         return jdbcClient
                 .sql(
                         """
-                        SELECT ds.id,
-                               pe.project_id,
-                               ds.project_environment_id,
-                               pe.environment_code,
-                               source.id AS data_source_id,
-                               source.DATA_SOURCE,
-                               source.engine,
-                               ds.schema_name,
-                               ds.jdbc_url,
-                               ds.secret_ref,
-                               ds.enabled,
-                               ds.created_at,
-                               ds.updated_at
-                        FROM db_project_env_datasource ds
-                        INNER JOIN db_project_environment pe ON pe.id = ds.project_environment_id
-                        INNER JOIN db_environment env ON env.code = pe.environment_code
-                        INNER JOIN db_data_source source ON source.id = ds.data_source_id
-                        WHERE pe.project_id = :projectId
-                        ORDER BY env.sort_order, source.DATA_SOURCE
-                        """)
+                              SELECT ds.id,
+                                     pe.project_id,
+                                     ds.project_environment_id,
+                                     pe.environment_code,
+                                     source.id AS data_source_id,
+                                     source.DATA_SOURCE,
+                                     source.engine,
+                                     ds.schema_name,
+                                     ds.jdbc_url,
+                                     ds.secret_ref,
+                                     ds.enabled,
+                                     ds.created_at,
+                                     ds.updated_at
+                              FROM db_project_env_datasource ds
+                              INNER JOIN db_project_environment pe ON pe.id = ds.project_environment_id
+                              INNER JOIN db_environment env ON env.code = pe.environment_code
+                              INNER JOIN db_data_source source ON source.id = ds.data_source_id
+                              WHERE pe.project_id = :projectId
+                              ORDER BY env.sort_order, source.DATA_SOURCE
+                              """)
                 .param("projectId", projectId)
-                .query((rs, rowNum) -> mapDataSource(rs))
+                .query((rs, ignored) -> mapDataSource(rs))
                 .list();
     }
 
@@ -234,27 +234,27 @@ public class ProjectRepository {
         return jdbcClient
                 .sql(
                         """
-                        SELECT ds.id,
-                               pe.project_id,
-                               ds.project_environment_id,
-                               pe.environment_code,
-                               source.id AS data_source_id,
-                               source.DATA_SOURCE,
-                               source.engine,
-                               ds.schema_name,
-                               ds.jdbc_url,
-                               ds.secret_ref,
-                               ds.enabled,
-                               ds.created_at,
-                               ds.updated_at
-                        FROM db_project_env_datasource ds
-                        INNER JOIN db_project_environment pe ON pe.id = ds.project_environment_id
-                        INNER JOIN db_data_source source ON source.id = ds.data_source_id
-                        WHERE pe.project_id = :projectId AND ds.id = :id
-                        """)
+                              SELECT ds.id,
+                                     pe.project_id,
+                                     ds.project_environment_id,
+                                     pe.environment_code,
+                                     source.id AS data_source_id,
+                                     source.DATA_SOURCE,
+                                     source.engine,
+                                     ds.schema_name,
+                                     ds.jdbc_url,
+                                     ds.secret_ref,
+                                     ds.enabled,
+                                     ds.created_at,
+                                     ds.updated_at
+                              FROM db_project_env_datasource ds
+                              INNER JOIN db_project_environment pe ON pe.id = ds.project_environment_id
+                              INNER JOIN db_data_source source ON source.id = ds.data_source_id
+                              WHERE pe.project_id = :projectId AND ds.id = :id
+                              """)
                 .param("projectId", projectId)
                 .param("id", projectDataSourceId)
-                .query((rs, rowNum) -> mapDataSource(rs))
+                .query((rs, ignored) -> mapDataSource(rs))
                 .optional();
     }
 
@@ -263,13 +263,13 @@ public class ProjectRepository {
             jdbcClient
                     .sql(
                             """
-                            INSERT INTO db_project_env_datasource
-                                (id, project_environment_id, data_source_id, schema_name,
-                                 jdbc_url, secret_ref, enabled, created_at, updated_at)
-                            VALUES
-                                (:id, :projectEnvironmentId, :dataSourceId, :schemaName,
-                                 :jdbcUrl, :secretRef, :enabled, :createdAt, :updatedAt)
-                            """)
+                           INSERT INTO db_project_env_datasource
+                               (id, project_environment_id, data_source_id, schema_name,
+                                jdbc_url, secret_ref, enabled, created_at, updated_at)
+                           VALUES
+                               (:id, :projectEnvironmentId, :dataSourceId, :schemaName,
+                                :jdbcUrl, :secretRef, :enabled, :createdAt, :updatedAt)
+                           """)
                     .param("id", mapping.id())
                     .param("projectEnvironmentId", mapping.projectEnvironmentId())
                     .param("dataSourceId", mapping.dataSourceId())
@@ -294,10 +294,10 @@ public class ProjectRepository {
         jdbcClient
                 .sql(
                         """
-                        UPDATE db_project
-                        SET updated_at = :updatedAt
-                        WHERE id = :id
-                        """)
+                       UPDATE db_project
+                       SET updated_at = :updatedAt
+                       WHERE id = :id
+                       """)
                 .param("id", projectId)
                 .param("updatedAt", Timestamp.from(updatedAt))
                 .update();

@@ -239,7 +239,7 @@ class ProjectServiceTests {
                                 new ProjectEnvironmentMapping(
                                         "env-uat", "project-1", Environment.UAT, true, NOW)));
         when(secretRefFactory.forMapping("WING_CORE", "UAT", "CORE_DB"))
-                .thenReturn("projects/WING_CORE/environments/UAT/data-sources/WING_CORE");
+                .thenReturn("projects/WING_CORE/environments/UAT/data-sources/CORE_DB");
 
         ProjectDataSourceResponse response =
                 projectService.mapDataSource(

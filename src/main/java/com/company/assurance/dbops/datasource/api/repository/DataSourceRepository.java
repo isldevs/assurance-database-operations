@@ -29,13 +29,13 @@ public class DataSourceRepository {
         return jdbcClient
                 .sql(
                         """
-                        SELECT id, DATA_SOURCE, data_source_name, engine, description,
-                               enabled, created_by, created_at, updated_at
-                        FROM db_data_source
-                        WHERE id = :id
-                        """)
+                              SELECT id, DATA_SOURCE, data_source_name, engine, description,
+                                     enabled, created_by, created_at, updated_at
+                              FROM db_data_source
+                              WHERE id = :id
+                              """)
                 .param("id", id)
-                .query((rs, rowNum) -> map(rs))
+                .query((rs, ignored) -> map(rs))
                 .optional();
     }
 
@@ -43,13 +43,13 @@ public class DataSourceRepository {
         return jdbcClient
                 .sql(
                         """
-                        SELECT id, DATA_SOURCE, data_source_name, engine, description,
-                               enabled, created_by, created_at, updated_at
-                        FROM db_data_source
-                        WHERE DATA_SOURCE = :dataSourceCode
-                        """)
+                              SELECT id, DATA_SOURCE, data_source_name, engine, description,
+                                     enabled, created_by, created_at, updated_at
+                              FROM db_data_source
+                              WHERE DATA_SOURCE = :dataSourceCode
+                              """)
                 .param("dataSourceCode", dataSourceCode)
-                .query((rs, rowNum) -> map(rs))
+                .query((rs, ignored) -> map(rs))
                 .optional();
     }
 
@@ -57,12 +57,12 @@ public class DataSourceRepository {
         return jdbcClient
                 .sql(
                         """
-                        SELECT id, DATA_SOURCE, data_source_name, engine, description,
-                               enabled, created_by, created_at, updated_at
-                        FROM db_data_source
-                        ORDER BY DATA_SOURCE
-                        """)
-                .query((rs, rowNum) -> map(rs))
+                              SELECT id, DATA_SOURCE, data_source_name, engine, description,
+                                     enabled, created_by, created_at, updated_at
+                              FROM db_data_source
+                              ORDER BY DATA_SOURCE
+                              """)
+                .query((rs, ignored) -> map(rs))
                 .list();
     }
 
@@ -71,13 +71,13 @@ public class DataSourceRepository {
             jdbcClient
                     .sql(
                             """
-                            INSERT INTO db_data_source
-                                (id, DATA_SOURCE, data_source_name, engine, description,
-                                 enabled, created_by, created_at, updated_at)
-                            VALUES
-                                (:id, :dataSourceCode, :dataSourceName, :engine, :description,
-                                 :enabled, :createdBy, :createdAt, :updatedAt)
-                            """)
+                           INSERT INTO db_data_source
+                               (id, DATA_SOURCE, data_source_name, engine, description,
+                                enabled, created_by, created_at, updated_at)
+                           VALUES
+                               (:id, :dataSourceCode, :dataSourceName, :engine, :description,
+                                :enabled, :createdBy, :createdAt, :updatedAt)
+                           """)
                     .param("id", dataSource.id())
                     .param("dataSourceCode", dataSource.dataSourceCode())
                     .param("dataSourceName", dataSource.dataSourceName())
