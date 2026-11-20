@@ -1,11 +1,10 @@
+
 spring:
   config:
     activate:
       on-profile: local
 
   datasource:
-    # Metadata database for project / environment / datasource configuration.
-    # Local Docker and production both inject these values through environment variables.
     url: ${METADATA_JDBC_URL}
     username: ${METADATA_DB_USERNAME}
     password: ${METADATA_DB_PASSWORD}
@@ -20,7 +19,6 @@ db-operations:
   maximum-total-connections: 10
 
   registrations:
-    # Oracle operational datasource
     - project-code: ORACLE
       data-source-code: ORACLE
       engine: ORACLE
@@ -30,14 +28,68 @@ db-operations:
       password: ${ORACLE_DB_PASSWORD}
       enabled: true
 
-# Deny unapproved target destinations by default.
 db-target-policy:
   approved-targets:
+
+    # Static Oracle registration
     - project-code: ORACLE
       environment: UAT
       data-source-code: ORACLE
       engine: ORACLE
-      jdbc-url: ${ORACLE_JDBC_URL}
+      jdbc-url: ${ORACLE_APPROVED_JDBC_URL}
+      non-production-confirmed: true
+
+    # UAT
+    - project-code: WING_CORE
+      environment: UAT
+      data-source-code: CORE_DB
+      engine: ORACLE
+      jdbc-url: ${UAT_CORE_DB_JDBC_URL}
+      non-production-confirmed: true
+
+    - project-code: WING_CORE
+      environment: UAT
+      data-source-code: PERSONA_DB
+      engine: ORACLE
+      jdbc-url: ${UAT_PERSONA_DB_JDBC_URL}
+      non-production-confirmed: true
+
+    # STAGE
+    - project-code: WING_CORE
+      environment: STAGE
+      data-source-code: CORE_DB
+      engine: ORACLE
+      jdbc-url: ${STAGE_CORE_DB_JDBC_URL}
+      non-production-confirmed: true
+
+    - project-code: WING_CORE
+      environment: STAGE
+      data-source-code: PERSONA_DB
+      engine: ORACLE
+      jdbc-url: ${STAGE_PERSONA_DB_JDBC_URL}
+      non-production-confirmed: true
+
+    # STAGE2
+    - project-code: WING_CORE
+      environment: STAGE2
+      data-source-code: CORE_DB
+      engine: ORACLE
+      jdbc-url: ${STAGE2_CORE_DB_JDBC_URL}
+      non-production-confirmed: true
+
+    # STAGE3
+    - project-code: WING_CORE
+      environment: STAGE3
+      data-source-code: CORE_DB
+      engine: ORACLE
+      jdbc-url: ${STAGE3_CORE_DB_JDBC_URL}
+      non-production-confirmed: true
+
+    - project-code: WING_CORE
+      environment: STAGE3
+      data-source-code: PAYMENT_DB
+      engine: POSTGRESQL
+      jdbc-url: ${STAGE3_PAYMENT_DB_JDBC_URL}
       non-production-confirmed: true
 
 anonymous-user: anonymous

@@ -1,0 +1,34 @@
+{
+  "properties": [
+    {
+      "name": "application.version",
+      "type": "java.lang.String",
+      "description": "The current application version."
+    },
+    {
+      "name": "anonymous-user",
+      "type": "java.lang.String",
+      "description": "Fallback actor identifier when no authenticated principal is available."
+    },
+    {
+      "name": "vault.address",
+      "type": "java.lang.String",
+      "description": "Base URL of the HashiCorp Vault server."
+    },
+    {
+      "name": "vault.token",
+      "type": "java.lang.String",
+      "description": "Authentication token used to access HashiCorp Vault."
+    },
+    {
+      "name": "vault.secret-path",
+      "type": "java.lang.String",
+      "description": "Vault secret path template for database credentials."
+    },
+    {
+      "name": "vault.kv-mount",
+      "type": "java.lang.String",
+      "description": "Mount path of the Vault KV version 2 secrets engine."
+    }
+  ]
+}

@@ -76,3 +76,7 @@ db-operations:
         idle-timeout-ms: 60000
         maximum-lifetime-ms: 1800000
         leak-detection-threshold-ms: 0
+
+# Deny all operational database targets unless explicitly approved.
+db-target-policy:
+  approved-targets: []

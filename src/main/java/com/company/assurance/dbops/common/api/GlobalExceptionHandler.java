@@ -3,6 +3,7 @@ package com.company.assurance.dbops.common.api;
 import com.company.assurance.dbops.datasource.api.exception.DataSourceAlreadyExistsException;
 import com.company.assurance.dbops.datasource.api.exception.DataSourceNotFoundException;
 import com.company.assurance.dbops.datasource.exception.VaultSecretException;
+import com.company.assurance.dbops.datasource.validation.TargetNotApprovedException;
 import com.company.assurance.dbops.project.exception.DuplicateProjectMappingException;
 import com.company.assurance.dbops.project.exception.ProjectAlreadyExistsException;
 import com.company.assurance.dbops.project.exception.ProjectDataSourceNotFoundException;
@@ -137,6 +138,21 @@ public class GlobalExceptionHandler {
                         ApiResponse.fail(
                                 ApiError.of(status.name(), status.getReasonPhrase(), details),
                                 correlationId(request)));
+    }
+
+    @ExceptionHandler(TargetNotApprovedException.class)
+    ResponseEntity<ApiResponse<Void>> handleTargetNotApproved(
+            TargetNotApprovedException ex, HttpServletRequest request) {
+
+        String correlationId = correlationId(request);
+
+        log.warn("Database target approval denied: correlationId={}", correlationId);
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(
+                        ApiResponse.fail(
+                                ApiError.of("TARGET_NOT_APPROVED", ex.getMessage()),
+                                correlationId));
     }
 
     private static String correlationId(HttpServletRequest request) {

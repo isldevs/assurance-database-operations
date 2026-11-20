@@ -9,6 +9,7 @@ import com.company.assurance.dbops.datasource.api.exception.DataSourceNotFoundEx
 import com.company.assurance.dbops.datasource.api.repository.DataSourceRepository;
 import com.company.assurance.dbops.datasource.connection.DataSourceConnectionTester;
 import com.company.assurance.dbops.datasource.engine.DatabaseEngine;
+import com.company.assurance.dbops.datasource.validation.TargetApprovalValidator;
 import com.company.assurance.dbops.environment.Environment;
 import com.company.assurance.dbops.project.data.request.CreateProjectRequest;
 import com.company.assurance.dbops.project.data.request.MapDataSourceRequest;
@@ -47,6 +48,7 @@ public class ProjectService {
     private final DataSourceSecretResolver secretResolver;
     private final ProjectDataSourceSecretRefFactory secretRefFactory;
     private final DataSourceConnectionTester connectionTester;
+    private final TargetApprovalValidator targetApprovalValidator;
     private final CustomSecurityContextHolder securityContextHolder;
     private final Clock clock;
 
@@ -56,13 +58,16 @@ public class ProjectService {
             DataSourceSecretResolver secretResolver,
             ProjectDataSourceSecretRefFactory secretRefFactory,
             DataSourceConnectionTester connectionTester,
+            TargetApprovalValidator targetApprovalValidator,
             CustomSecurityContextHolder securityContextHolder,
             Clock clock) {
+
         this.projectRepository = projectRepository;
         this.dataSourceRepository = dataSourceRepository;
         this.secretResolver = secretResolver;
         this.secretRefFactory = secretRefFactory;
         this.connectionTester = connectionTester;
+        this.targetApprovalValidator = targetApprovalValidator;
         this.securityContextHolder = securityContextHolder;
         this.clock = clock;
     }
@@ -124,21 +129,29 @@ public class ProjectService {
 
     @Transactional
     public ProjectDataSourceResponse mapDataSource(String projectId, MapDataSourceRequest request) {
+
         Project project = requireProject(projectId);
         Environment environment = request.environment();
+
         String dataSourceCode = normalizeCode(request.dataSourceCode(), "dataSourceCode");
 
-        // Normalize through DataSourceKey so API codes match pool registry rules.
         DataSourceKey key = new DataSourceKey(project.projectCode(), environment, dataSourceCode);
+
         DataSource definition =
                 dataSourceRepository
                         .findByCode(key.dataSourceCode())
                         .orElseThrow(() -> new DataSourceNotFoundException(key.dataSourceCode()));
+
         if (!definition.enabled()) {
             throw new IllegalArgumentException(
                     "Data source is disabled: " + definition.dataSourceCode());
         }
-        validateJdbcUrl(definition.engine(), request.jdbcUrl());
+
+        String jdbcUrl = request.jdbcUrl().strip();
+
+        validateJdbcUrl(definition.engine(), jdbcUrl);
+
+        targetApprovalValidator.assertApproved(key, definition.engine(), jdbcUrl);
 
         ProjectEnvironmentMapping environmentMapping =
                 projectRepository
@@ -150,12 +163,11 @@ public class ProjectService {
                                                         + environment.name()));
 
         String secretRef =
-                this.secretRefFactory.forMapping(
-                        project.projectCode(),
-                        request.environment().name(),
-                        request.dataSourceCode());
+                secretRefFactory.forMapping(
+                        key.projectCode(), key.environment().name(), key.dataSourceCode());
 
         Instant now = clock.instant();
+
         ProjectDataSourceMapping mapping =
                 new ProjectDataSourceMapping(
                         UUID.randomUUID().toString(),
@@ -166,44 +178,64 @@ public class ProjectService {
                         key.dataSourceCode(),
                         definition.engine(),
                         blankToNull(request.schemaName()),
-                        request.jdbcUrl().strip(),
+                        jdbcUrl,
                         secretRef.strip(),
                         request.enabledOrDefault(),
                         now,
                         now);
+
         projectRepository.insertDataSource(mapping);
         projectRepository.touchProject(project.id(), now);
+
         return toDataSourceResponse(mapping);
     }
 
     public ProjectDataSourceConnectionResponse testDataSourceConnection(
             String projectId, String projectDataSourceId) {
+
+        Project project = requireProject(projectId);
+
         ProjectDataSourceMapping mapping =
                 projectRepository
                         .findDataSource(projectId, projectDataSourceId)
                         .orElseThrow(
                                 () -> new ProjectDataSourceNotFoundException(projectDataSourceId));
+
         if (!mapping.enabled()) {
             throw new IllegalArgumentException(
                     "Project data source is disabled: " + projectDataSourceId);
         }
+
+        DataSourceKey key =
+                new DataSourceKey(
+                        project.projectCode(), mapping.environment(), mapping.dataSourceCode());
+
+        targetApprovalValidator.assertApproved(key, mapping.engine(), mapping.jdbcUrl());
+
         long startedAt = System.nanoTime();
+
         DatabaseCredentials credentials = secretResolver.resolve(mapping.secretRef());
+
         try {
             boolean connected =
                     connectionTester.test(
+                            key,
                             mapping.engine(),
                             mapping.jdbcUrl(),
                             credentials.username(),
                             credentials.password());
+
             return new ProjectDataSourceConnectionResponse(
                     mapping.id(),
                     connected,
                     elapsedMs(startedAt),
                     connected ? "Connection successful" : "Connection validation failed");
+
         } catch (DataAccessException ex) {
+
             return new ProjectDataSourceConnectionResponse(
                     mapping.id(), false, elapsedMs(startedAt), "Connection failed");
+
         } finally {
             credentials.clearPassword();
         }
